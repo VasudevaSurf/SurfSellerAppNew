@@ -1,9 +1,9 @@
 import axios from "axios";
 import { API_ENDPOINTS } from "../constants/apiEndpoints";
+// import {API_BASE_URL, API_AUTH_HEADER} from '@env'
 
-const API_BASE_URL = "https://surf.mt/2.0/api";
-const API_AUTH_HEADER =
-  "Basic YWRtaW5Ac3VyZi5tdDpOOW9aMnlXMzc3cEg1VTExNTFiY3YyZlYyNDYySTk1NA==";
+const apiBaseUrl = process.env.API_BASE_URL;
+const apiAuthHeader = process.env.API_AUTH_HEADER;
 
 export interface Product {
   product_id: string;
@@ -24,10 +24,10 @@ export interface ProductsResponse {
 }
 
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: apiBaseUrl,
   headers: {
     "Content-Type": "application/json",
-    Authorization: API_AUTH_HEADER,
+    Authorization: apiAuthHeader,
   },
 });
 
