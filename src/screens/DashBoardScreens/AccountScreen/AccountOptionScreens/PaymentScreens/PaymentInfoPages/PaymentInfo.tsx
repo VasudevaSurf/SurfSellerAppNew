@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, { useMemo, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -6,59 +6,59 @@ import {
   ScrollView,
   TouchableOpacity,
   View,
-} from 'react-native';
-import {SceneMap, TabBar, TabView} from 'react-native-tab-view';
-import ArrowLeftIcon from '../../../../../../../assets/icons/ArrowLeftIcon';
-import BankOutlineIcon from '../../../../../../../assets/icons/BankOutlineIcon';
-import InfoIconPay from '../../../../../../../assets/icons/InfoIconPay';
-import WalletIcon from '../../../../../../../assets/icons/WalletIcon';
-import {AddModal} from '../../../../../../components/MainComponents/AddModal/AddModal';
-import {SlidingBar} from '../../../../../../components/MainComponents/SlidingBar/SlidingBar';
+} from "react-native";
+import { SceneMap, TabBar, TabView } from "react-native-tab-view";
+import ArrowLeftIcon from "../../../../../../../assets/icons/ArrowLeftIcon";
+import BankOutlineIcon from "../../../../../../../assets/icons/BankOutlineIcon";
+import InfoIconPay from "../../../../../../../assets/icons/InfoIconPay";
+import WalletIcon from "../../../../../../../assets/icons/WalletIcon";
+import { AddModal } from "../../../../../../components/MainComponents/AddModal/AddModal";
+import { SlidingBar } from "../../../../../../components/MainComponents/SlidingBar/SlidingBar";
 import {
   Button,
   ButtonSize,
   ButtonState,
   ButtonType,
   ButtonVariant,
-} from '../../../../../../components/UserComponents/Button';
-import {Header} from '../../../../../../components/UserComponents/Header/Header';
-import {TextButton} from '../../../../../../components/UserComponents/TextButton';
-import {Typography} from '../../../../../../components/UserComponents/Typography/Typography';
-import {TypographyVariant} from '../../../../../../components/UserComponents/Typography/Typography.types';
-import {ColorPalette} from '../../../../../../config/colorPalette';
-import {getScreenHeight} from '../../../../../../helpers/screenSize';
+} from "../../../../../../components/UserComponents/Button";
+import { Header } from "../../../../../../components/UserComponents/Header/Header";
+import { TextButton } from "../../../../../../components/UserComponents/TextButton";
+import { Typography } from "../../../../../../components/UserComponents/Typography/Typography";
+import { TypographyVariant } from "../../../../../../components/UserComponents/Typography/Typography.types";
+import { ColorPalette } from "../../../../../../config/colorPalette";
+import { getScreenHeight } from "../../../../../../helpers/screenSize";
 import {
   goBack,
   navigate,
-} from '../../../../../../navigation/utils/navigationRef';
-import {styles} from './PaymentInfo.styles';
-import ArrowLeft from '../../../../../../../assets/icons/ArrowLeft';
-import QuestionMarkIcon from '../../../../../../../assets/icons/QuestionMarkIcon';
+} from "../../../../../../navigation/utils/navigationRef";
+import { styles } from "./PaymentInfo.styles";
+import ArrowLeft from "../../../../../../../assets/icons/ArrowLeft";
+import QuestionMarkIcon from "../../../../../../../assets/icons/QuestionMarkIcon";
 
-const initialLayout = {width: Dimensions.get('window').width};
+const initialLayout = { width: Dimensions.get("window").width };
 
 const PaymentInfo = () => {
   const filterOptions = [
-    {id: 'All', label: 'All'},
-    {id: 'Completed', label: 'Completed'},
-    {id: 'Pending', label: 'Pending'},
-    {id: 'Failed', label: 'Failed'},
+    { id: "All", label: "All" },
+    { id: "Completed", label: "Completed" },
+    { id: "Pending", label: "Pending" },
+    { id: "Failed", label: "Failed" },
   ];
 
   const [selectedFilter, setSelectedFilter] = useState(filterOptions[0]);
   const [index, setIndex] = useState(0);
   const [routes] = useState([
-    {key: 'payouts', title: 'Payouts'},
-    {key: 'withdrawals', title: 'Withdrawals'},
+    { key: "payouts", title: "Payouts" },
+    { key: "withdrawals", title: "Withdrawals" },
   ]);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const handleFilterChange = option => {
+  const handleFilterChange = (option) => {
     setSelectedFilter(option);
   };
 
   const navigateToWithdraw = () => {
-    navigate('WithdrawScreen');
+    navigate("WithdrawScreen");
   };
 
   const openEditModal = () => {
@@ -73,19 +73,19 @@ const PaymentInfo = () => {
     closeModal();
   };
 
-  const getStatusColors = status => {
+  const getStatusColors = (status) => {
     const statusConfig = {
       Pending: {
-        color: '#E4A951',
-        bgColor: '#FFF8E7',
+        color: "#E4A951",
+        bgColor: "#FFF8E7",
       },
       Completed: {
-        color: '#3BB54A',
-        bgColor: '#E7FFE9',
+        color: "#3BB54A",
+        bgColor: "#E7FFE9",
       },
       Declined: {
-        color: '#E45151',
-        bgColor: '#FFE7E7',
+        color: "#E45151",
+        bgColor: "#FFE7E7",
       },
       default: {
         color: ColorPalette.GREY_TEXT_500,
@@ -97,7 +97,7 @@ const PaymentInfo = () => {
   };
 
   const renderHistoryItem = (type, status, amount) => {
-    const {color: statusColor, bgColor: statusBgColor} =
+    const { color: statusColor, bgColor: statusBgColor } =
       getStatusColors(status);
 
     return (
@@ -107,7 +107,7 @@ const PaymentInfo = () => {
             <Typography
               text={type}
               variant={TypographyVariant.PMEDIUM_MEDIUM}
-              customTextStyles={{color: ColorPalette.GREY_TEXT_500}}
+              customTextStyles={{ color: ColorPalette.GREY_TEXT_500 }}
             />
             <InfoIconPay style={undefined} color={ColorPalette.GREY_TEXT_400} />
           </View>
@@ -115,20 +115,22 @@ const PaymentInfo = () => {
           <Typography
             text="28/09/2024, 14:25"
             variant={TypographyVariant.LSMALL_REGULAR}
-            customTextStyles={{color: ColorPalette.GREY_TEXT_100}}
+            customTextStyles={{ color: ColorPalette.GREY_TEXT_100 }}
           />
         </View>
         <View style={styles.payoutItemRight}>
           <Typography
             text={`€${amount}`}
             variant={TypographyVariant.H6_BOLD}
-            customTextStyles={{color: ColorPalette.GREY_TEXT_500}}
+            customTextStyles={{ color: ColorPalette.GREY_TEXT_500 }}
           />
-          <View style={[styles.statusBadge, {backgroundColor: statusBgColor}]}>
+          <View
+            style={[styles.statusBadge, { backgroundColor: statusBgColor }]}
+          >
             <Typography
               text={status}
               variant={TypographyVariant.LXSMALL_MEDIUM}
-              customTextStyles={{color: statusColor}}
+              customTextStyles={{ color: statusColor }}
             />
           </View>
         </View>
@@ -142,8 +144,9 @@ const PaymentInfo = () => {
         <View style={styles.divider}></View>
         <ScrollView
           style={styles.tabContent}
-          contentContainerStyle={{flexGrow: 1}}
-          showsVerticalScrollIndicator={false}>
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.tabContent}>
             <Typography
               text={`${title} History`}
@@ -161,16 +164,16 @@ const PaymentInfo = () => {
             <View style={[styles.payoutsList, !hasData && styles.emptyState]}>
               {hasData ? (
                 <>
-                  {renderHistoryItem(type, 'Pending', '89.9')}
-                  {renderHistoryItem(type, 'Declined', '89.9')}
-                  {renderHistoryItem(type, 'Completed', '89.9')}
-                  {renderHistoryItem(type, 'Pending', '89.9')}
+                  {renderHistoryItem(type, "Pending", "89.9")}
+                  {renderHistoryItem(type, "Declined", "89.9")}
+                  {renderHistoryItem(type, "Completed", "89.9")}
+                  {renderHistoryItem(type, "Pending", "89.9")}
                 </>
               ) : (
                 <Typography
                   text={`No ${title.toLowerCase()} yet`}
                   variant={TypographyVariant.PMEDIUM_REGULAR}
-                  customTextStyles={{color: ColorPalette.GREY_TEXT_400}}
+                  customTextStyles={{ color: ColorPalette.GREY_TEXT_400 }}
                 />
               )}
             </View>
@@ -180,36 +183,27 @@ const PaymentInfo = () => {
     );
   };
 
-  const PayoutsRoute = () => renderHistorySection('Payouts', 'Payouts', true);
+  const PayoutsRoute = () => renderHistorySection("Payouts", "Payouts", true);
   const WithdrawalsRoute = () =>
-    renderHistorySection('Withdrawals', 'Withdrawals', false);
+    renderHistorySection("Withdrawals", "Withdrawals", false);
 
   const renderScene = SceneMap({
     payouts: PayoutsRoute,
     withdrawals: WithdrawalsRoute,
   });
 
-  const renderTabBar = props => (
+  const renderTabBar = (props) => (
     <View style={styles.tabBarContainer}>
-      <TabBar
-        {...props}
-        indicatorStyle={{backgroundColor: 'transparent'}}
-        style={styles.tabBar}
-        tabStyle={styles.tab}
-        renderTabBarItem={({route}) => {
-          const isFocused =
-            props.navigationState.index ===
-            props.navigationState.routes.findIndex(r => r.key === route.key);
+      <View style={styles.tabButtonWrapper}>
+        {props.navigationState.routes.map((route, i) => {
+          const isFocused = props.navigationState.index === i;
 
           return (
             <TouchableOpacity
-              onPress={() => {
-                const routeIndex = props.navigationState.routes.findIndex(
-                  r => r.key === route.key,
-                );
-                setIndex(routeIndex);
-              }}
-              style={[styles.tabButton, isFocused && styles.activeTabButton]}>
+              key={i}
+              onPress={() => setIndex(i)}
+              style={[styles.tabButton, isFocused && styles.activeTabButton]}
+            >
               <Typography
                 text={route.title}
                 variant={TypographyVariant.PMEDIUM_MEDIUM}
@@ -221,14 +215,14 @@ const PaymentInfo = () => {
               />
             </TouchableOpacity>
           );
-        }}
-      />
+        })}
+      </View>
     </View>
   );
 
   const modalButtons = [
     {
-      text: 'Edit stripe connect',
+      text: "Edit stripe connect",
       onPress: handleEditStripeConnect,
       variant: ButtonVariant.PRIMARY,
       type: ButtonType.PRIMARY,
@@ -236,7 +230,7 @@ const PaymentInfo = () => {
       state: ButtonState.DEFAULT,
     },
     {
-      text: 'Cancel',
+      text: "Cancel",
       onPress: closeModal,
       variant: ButtonVariant.SECONDARY,
       type: ButtonType.OUTLINED,
@@ -250,17 +244,17 @@ const PaymentInfo = () => {
     () => [
       {
         icon: QuestionMarkIcon,
-        onPress: () => console.log('Question mark pressed'),
+        onPress: () => console.log("Question mark pressed"),
         size: 24,
         color: ColorPalette.Black,
         strokeWidth: 2,
       },
     ],
-    [],
+    []
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
       <Header
         name="Payments"
         variant={TypographyVariant.LMEDIUM_BOLD}
@@ -272,9 +266,10 @@ const PaymentInfo = () => {
         style={styles.mainContainer}
         contentContainerStyle={[
           styles.scrollContent,
-          {paddingTop: getScreenHeight(2)},
+          { paddingTop: getScreenHeight(2) },
         ]}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         {/* Stripe Connect Section */}
         <View style={styles.stripEditContainer}>
           <View style={styles.stripEditContainerOne}>
@@ -283,16 +278,16 @@ const PaymentInfo = () => {
               <Typography
                 text="Stripe connect"
                 variant={TypographyVariant.LMEDIUM_BOLD}
-                customTextStyles={{color: ColorPalette.GREY_TEXT_500}}
+                customTextStyles={{ color: ColorPalette.GREY_TEXT_500 }}
               />
               <View style={styles.connectContainerOne}>
                 <Typography
                   text="Connected"
                   variant={TypographyVariant.PXSMALL_REGULAR}
-                  customTextStyles={{color: ColorPalette.ProgressLine}}
+                  customTextStyles={{ color: ColorPalette.ProgressLine }}
                 />
                 <Image
-                  source={require('../../../../../../../assets/images/elements.png')}
+                  source={require("../../../../../../../assets/images/elements.png")}
                   style={styles.statusIcon}
                 />
               </View>
@@ -304,7 +299,7 @@ const PaymentInfo = () => {
             variant={TypographyVariant.PMEDIUM_MEDIUM}
             underline
             customContainerStyles={styles.editButton}
-            customTextStyles={{color: ColorPalette.PURPLE_300}}
+            customTextStyles={{ color: ColorPalette.PURPLE_300 }}
           />
         </View>
 
@@ -317,12 +312,12 @@ const PaymentInfo = () => {
                 <Typography
                   text="Current balance"
                   variant={TypographyVariant.PSMALL_REGULAR}
-                  customTextStyles={{color: ColorPalette.GREY_TEXT_500}}
+                  customTextStyles={{ color: ColorPalette.GREY_TEXT_500 }}
                 />
                 <Typography
                   text="€12.50"
                   variant={TypographyVariant.H5_BOLD}
-                  customTextStyles={{color: ColorPalette.BalanceColor}}
+                  customTextStyles={{ color: ColorPalette.BalanceColor }}
                 />
               </View>
             </View>
@@ -341,7 +336,7 @@ const PaymentInfo = () => {
         {/* Tabs Section */}
         <View style={styles.tabsContainer}>
           <TabView
-            navigationState={{index, routes}}
+            navigationState={{ index, routes }}
             renderScene={renderScene}
             onIndexChange={setIndex}
             initialLayout={initialLayout}

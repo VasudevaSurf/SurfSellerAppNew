@@ -1,23 +1,23 @@
-import React from 'react';
+import React from "react";
 import {
   Modal as RNModal,
   StyleProp,
   TouchableOpacity,
   View,
   ViewStyle,
-} from 'react-native';
-import CloseIcon from '../../../../assets/icons/CloseIcon';
-import {ColorPalette} from '../../../config/colorPalette';
+} from "react-native";
+import CloseIcon from "../../../../assets/icons/CloseIcon";
+import { ColorPalette } from "../../../config/colorPalette";
 import {
   Button,
   ButtonSize,
   ButtonState,
   ButtonType,
   ButtonVariant,
-} from '../../UserComponents/Button';
-import {Typography} from '../../UserComponents/Typography/Typography';
-import {TypographyVariant} from '../../UserComponents/Typography/Typography.types';
-import {styles} from './AddModal.styles';
+} from "../../UserComponents/Button";
+import { Typography } from "../../UserComponents/Typography/Typography";
+import { TypographyVariant } from "../../UserComponents/Typography/Typography.types";
+import { styles } from "./AddModal.styles";
 
 export interface ButtonConfig {
   text: string;
@@ -31,8 +31,9 @@ export interface ButtonConfig {
   disabled?: boolean;
   bgColor?: string;
   IconComponent?: React.ReactNode;
-  iconPosition?: 'left' | 'right';
+  iconPosition?: "left" | "right";
   useGradient?: boolean;
+  textVariant?: TypographyVariant;
 }
 
 export interface AddModalProps {
@@ -58,25 +59,27 @@ export const AddModal: React.FC<AddModalProps> = ({
   containerStyle,
   footerStyle,
   backdropOpacity = 0.5,
-  backdropColor = 'rgba(0,0,0,0.24)',
-  animationIn = 'slideInUp',
-  animationOut = 'slideOutDown',
+  backdropColor = "rgba(0,0,0,0.24)",
+  animationIn = "slideInUp",
+  animationOut = "slideOutDown",
 }) => {
   return (
     <RNModal
       visible={isVisible}
       animationType="slide"
       transparent={true}
-      onRequestClose={onClose}>
+      onRequestClose={onClose}
+    >
       <View
         style={{
           flex: 1,
-          backgroundColor: backdropColor ? backdropColor : 'rgba(0,0,0,0.24)',
-          justifyContent: 'flex-end',
-        }}>
+          backgroundColor: backdropColor ? backdropColor : "rgba(0,0,0,0.24)",
+          justifyContent: "flex-end",
+        }}
+      >
         <TouchableOpacity
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
@@ -100,7 +103,8 @@ export const AddModal: React.FC<AddModalProps> = ({
                 {showCloseIcon && (
                   <TouchableOpacity
                     onPress={onClose}
-                    style={styles.closeButton}>
+                    style={styles.closeButton}
+                  >
                     <CloseIcon color={ColorPalette.GREY_TEXT_400} size={24} />
                   </TouchableOpacity>
                 )}
@@ -111,7 +115,8 @@ export const AddModal: React.FC<AddModalProps> = ({
                 {showCloseIcon && (
                   <TouchableOpacity
                     onPress={onClose}
-                    style={styles.closeButton}>
+                    style={styles.closeButton}
+                  >
                     <CloseIcon color={ColorPalette.GREY_TEXT_400} size={24} />
                   </TouchableOpacity>
                 )}
@@ -139,6 +144,7 @@ export const AddModal: React.FC<AddModalProps> = ({
                 iconPosition={button.iconPosition}
                 useGradient={button.useGradient}
                 withShadow
+                textVariant={button.textVariant}
               />
             ))}
           </View>

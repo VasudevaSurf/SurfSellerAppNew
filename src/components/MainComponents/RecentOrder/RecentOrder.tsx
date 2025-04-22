@@ -1,18 +1,12 @@
-import React from 'react';
-import {Image, View} from 'react-native';
-import {ColorPalette} from '../../../config/colorPalette';
-import {Typography} from '../../UserComponents/Typography/Typography';
-import {TypographyVariant} from '../../UserComponents/Typography/Typography.types';
-import {styles} from './RecentOrder.styles';
-import {RecentOrderProps} from './RecentOrder.types';
-import {Badge} from '../../UserComponents/Badges/Badge';
-import DotIcon from '../../../assets/icons/DotIcon';
-import {
-  getScreenWidth,
-  getScreenHeight,
-  getFigmaDimension,
-} from '../../../helpers/screenSize';
-import {Spacing, BorderRadius} from '../../../config/globalStyles';
+import React from "react";
+import { Image, View } from "react-native";
+import { ColorPalette } from "../../../config/colorPalette";
+import { getFigmaDimension } from "../../../helpers/screenSize";
+import { Badge } from "../../UserComponents/Badges/Badge";
+import { Typography } from "../../UserComponents/Typography/Typography";
+import { TypographyVariant } from "../../UserComponents/Typography/Typography.types";
+import { styles } from "./RecentOrder.styles";
+import { RecentOrderProps } from "./RecentOrder.types";
 
 export const RecentOrder: React.FC<RecentOrderProps> = ({
   orderImage,
@@ -26,24 +20,24 @@ export const RecentOrder: React.FC<RecentOrderProps> = ({
 }) => {
   const getStatusStyle = (orderStatus: string) => {
     switch (orderStatus) {
-      case 'Pending':
+      case "Pending":
         return {
-          container: {backgroundColor: ColorPalette.YELLOW_00},
+          container: { backgroundColor: ColorPalette.YELLOW_00 },
           text: ColorPalette.YELLOW_200,
         };
-      case 'Delivered':
+      case "Delivered":
         return {
-          container: {backgroundColor: ColorPalette.GREEN_00},
+          container: { backgroundColor: ColorPalette.GREEN_00 },
           text: ColorPalette.Green_200,
         };
-      case 'Cancelled':
+      case "Cancelled":
         return {
-          container: {backgroundColor: ColorPalette.RED_00},
+          container: { backgroundColor: ColorPalette.RED_00 },
           text: ColorPalette.RED_200,
         };
       default:
         return {
-          container: {backgroundColor: ColorPalette.YELLOW_00},
+          container: { backgroundColor: ColorPalette.YELLOW_00 },
           text: ColorPalette.YELLOW_200,
         };
     }
@@ -58,18 +52,18 @@ export const RecentOrder: React.FC<RecentOrderProps> = ({
           <Badge
             text={status}
             customContainerStyle={{
-              backgroundColor: 'transparent',
+              backgroundColor: "transparent",
               paddingHorizontal: getFigmaDimension(8),
               paddingVertical: getFigmaDimension(6),
             }}
-            textVariant={TypographyVariant.LMEDIUM_MEDIUM}
+            textVariant={TypographyVariant.LSMALL_MEDIUM}
             customTextColor={statusStyle.text}
           />
         </View>
 
         <View style={styles.textSection}>
           <Typography
-            variant={TypographyVariant.LMEDIUM_BOLD}
+            variant={TypographyVariant.LMEDIUM_SEMIBOLD}
             text={`Order #${orderId}`}
             customTextStyles={styles.orderIdText}
           />
@@ -84,26 +78,26 @@ export const RecentOrder: React.FC<RecentOrderProps> = ({
 
       <View style={styles.rightSection}>
         <Image
-          source={{uri: orderImage}}
+          source={{ uri: orderImage }}
           style={styles.productImage}
           resizeMode="cover"
         />
 
         <View style={styles.priceSection}>
           <Typography
-            variant={TypographyVariant.H6_BOLD}
+            variant={TypographyVariant.H6_SEMIBOLD}
             text={`€${orderAmount.toFixed(2)}`}
             customTextStyles={styles.amountText}
           />
 
           <View style={styles.infoRow}>
             <Typography
-              variant={TypographyVariant.LSMALL_SEMIBOLD}
+              variant={TypographyVariant.LSMALL_REGULAR}
               text={`${orderDate}  •`}
               customTextStyles={styles.dateText}
             />
             <Typography
-              variant={TypographyVariant.LSMALL_SEMIBOLD}
+              variant={TypographyVariant.LSMALL_REGULAR}
               text={customerName}
               customTextStyles={styles.customerText}
             />

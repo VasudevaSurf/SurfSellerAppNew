@@ -238,7 +238,7 @@ const CompanyProfile = () => {
                     style={containerStyles.editButton}
                     onPress={handleUpload}
                   >
-                    <PencilIcon size={12} color={ColorPalette.ProgressLine} />
+                    <PencilIcon size={18} color={ColorPalette.GREY_TEXT_400} />
                   </TouchableOpacity>
                 </View>
                 <Typography
@@ -266,7 +266,7 @@ const CompanyProfile = () => {
                     style={containerStyles.editButton}
                     onPress={handleUpload}
                   >
-                    <PencilIcon size={12} color={ColorPalette.ProgressLine} />
+                    <PencilIcon size={18} color={ColorPalette.GREY_TEXT_400} />
                   </TouchableOpacity>
                 </View>
 

@@ -1,22 +1,22 @@
-import React, {useState} from 'react';
-import {Image, ImageSourcePropType, View} from 'react-native';
-import ToggleSwitch from 'toggle-switch-react-native';
-import MoreVerticalIcon from '../../../../assets/icons/MoreVerticalIcon';
-import {ColorPalette} from '../../../config/colorPalette';
-import {getFigmaDimension} from '../../../helpers/screenSize';
+import React, { useState } from "react";
+import { Image, ImageSourcePropType, View } from "react-native";
+import ToggleSwitch from "toggle-switch-react-native";
+import MoreVerticalIcon from "../../../../assets/icons/MoreVerticalIcon";
+import { ColorPalette } from "../../../config/colorPalette";
+import { getFigmaDimension } from "../../../helpers/screenSize";
 import {
   ButtonSize,
   ButtonState,
   ButtonType,
   ButtonVariant,
-} from '../../UserComponents/Button';
-import {Typography} from '../../UserComponents/Typography/Typography';
-import {TypographyVariant} from '../../UserComponents/Typography/Typography.types';
-import {AddModal, ButtonConfig} from '../AddModal/AddModal';
-import {styles} from './ProductInfo.styles';
-import {ProductInfoProps} from './ProductInfo.types';
+} from "../../UserComponents/Button";
+import { Typography } from "../../UserComponents/Typography/Typography";
+import { TypographyVariant } from "../../UserComponents/Typography/Typography.types";
+import { AddModal, ButtonConfig } from "../AddModal/AddModal";
+import { styles } from "./ProductInfo.styles";
+import { ProductInfoProps } from "./ProductInfo.types";
 
-const DefaultProduct = require('../../../../assets/images/defaultProduct.png');
+const DefaultProduct = require("../../../../assets/images/defaultProduct.png");
 
 export const ProductInfo: React.FC<ProductInfoProps> = ({
   orderImage,
@@ -34,53 +34,61 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   const [imageLoadError, setImageLoadError] = useState(false);
 
   const handleUploadCsv = () => {
-    console.log('Upload CSV pressed');
+    console.log("Upload CSV pressed");
   };
 
   const handleAddManually = () => {
-    console.log('Add manually pressed');
+    console.log("Add manually pressed");
   };
 
   const buttonsTwo: ButtonConfig[] = [
     {
-      text: 'Preview',
+      text: "Preview",
       onPress: () => handleUploadCsv(),
       variant: ButtonVariant.PRIMARY,
       state: ButtonState.DEFAULT,
       size: ButtonSize.MEDIUM,
+      textVariant: TypographyVariant.LMEDIUM_EXTRASEMIBOLD,
     },
     {
-      text: 'Delete',
+      text: "Delete",
       onPress: () => handleAddManually(),
       variant: ButtonVariant.PRIMARY,
       state: ButtonState.DEFAULT,
       type: ButtonType.OUTLINED,
       size: ButtonSize.MEDIUM,
-      customStyles: {borderWidth: 1, borderColor: ColorPalette.GREY_TEXT_400},
-      customTextStyles: {color: ColorPalette.GREY_TEXT_400},
+      customStyles: { borderWidth: 1, borderColor: ColorPalette.GREY_TEXT_400 },
+      customTextStyles: { color: ColorPalette.GREY_TEXT_400 },
+      textVariant: TypographyVariant.LMEDIUM_EXTRASEMIBOLD,
     },
     {
-      text: 'Cancel',
+      text: "Cancel",
       onPress: () => handleAddManually(),
       variant: ButtonVariant.PRIMARY,
       state: ButtonState.DEFAULT,
       type: ButtonType.OUTLINED,
       size: ButtonSize.MEDIUM,
-      customStyles: {borderWidth: 1},
+      customStyles: { borderWidth: 1 },
+      textVariant: TypographyVariant.LMEDIUM_EXTRASEMIBOLD,
     },
   ];
 
   const getImageSource = (): ImageSourcePropType => {
-    if (!orderImage || orderImage.trim() === '' || imageLoadError) {
+    if (!orderImage || orderImage.trim() === "" || imageLoadError) {
       return DefaultProduct;
     }
-    return {uri: orderImage};
+    return { uri: orderImage };
   };
 
   const handleImageError = () => {
-    console.log('Image load error, falling back to default');
+    console.log("Image load error, falling back to default");
     setImageLoadError(true);
   };
+
+  // Calculate dimensions for the toggle switch
+  const trackWidth = getFigmaDimension(40);
+  const trackHeight = getFigmaDimension(24);
+  const thumbDiameter = getFigmaDimension(18);
 
   return (
     <View style={[styles.container, style]}>
@@ -119,7 +127,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
               customTextStyles={styles.labelText}
             />
             <Typography
-              variant={TypographyVariant.H5_BOLD}
+              variant={TypographyVariant.H5_SEMIBOLD}
               text={sellerPrice}
               customTextStyles={styles.valueText}
             />
@@ -131,7 +139,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
               customTextStyles={styles.labelText}
             />
             <Typography
-              variant={TypographyVariant.H5_BOLD}
+              variant={TypographyVariant.H5_SEMIBOLD}
               text={platformFee}
               customTextStyles={styles.valueText}
             />
@@ -156,35 +164,49 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
               isOn={active}
               onColor={ColorPalette.Success}
               offColor={ColorPalette.Gray}
-              label={active ? 'Active' : 'Hidden'}
+              label={active ? "Active" : "Hidden"}
               labelStyle={styles.toggleLabel}
               size="small"
-              onToggle={isOn => onActiveChange?.(isOn)}
+              onToggle={(isOn) => onActiveChange?.(isOn)}
               thumbOnStyle={{
                 backgroundColor: ColorPalette.White,
                 elevation: 0,
                 shadowOpacity: 0,
-                shadowColor: 'transparent',
-                shadowOffset: {height: 0, width: 0},
+                shadowColor: "transparent",
+                shadowOffset: { height: 0, width: 0 },
                 shadowRadius: 0,
+                width: thumbDiameter,
+                height: thumbDiameter,
+                borderRadius: thumbDiameter / 2,
+                margin: (trackHeight - thumbDiameter) / 2,
               }}
               thumbOffStyle={{
                 backgroundColor: ColorPalette.White,
                 elevation: 0,
                 shadowOpacity: 0,
-                shadowColor: 'transparent',
-                shadowOffset: {height: 0, width: 0},
+                shadowColor: "transparent",
+                shadowOffset: { height: 0, width: 0 },
                 shadowRadius: 0,
+                width: thumbDiameter,
+                height: thumbDiameter,
+                borderRadius: thumbDiameter / 2,
+                margin: (trackHeight - thumbDiameter) / 2,
               }}
               trackOnStyle={{
-                width: getFigmaDimension(40),
-                height: getFigmaDimension(24),
-                borderRadius: getFigmaDimension(12),
+                width: trackWidth,
+                height: trackHeight,
+                borderRadius: trackHeight / 2,
+                padding: 0,
               }}
               trackOffStyle={{
-                width: getFigmaDimension(40),
-                height: getFigmaDimension(24),
-                borderRadius: getFigmaDimension(12),
+                width: trackWidth,
+                height: trackHeight,
+                borderRadius: trackHeight / 2,
+                padding: 0,
+              }}
+              containerStyle={{
+                padding: 0,
+                margin: 0,
               }}
             />
           </View>

@@ -1,12 +1,12 @@
-import React from 'react';
-import {StyleSheet, View, TouchableOpacity} from 'react-native';
-import {Typography} from '../../../../../components/UserComponents/Typography/Typography';
-import {TypographyVariant} from '../../../../../components/UserComponents/Typography/Typography.types';
-import {ColorPalette} from '../../../../../config/colorPalette';
+import React from "react";
+import { StyleSheet, View, TouchableOpacity } from "react-native";
+import { Typography } from "../../../../../components/UserComponents/Typography/Typography";
+import { TypographyVariant } from "../../../../../components/UserComponents/Typography/Typography.types";
+import { ColorPalette } from "../../../../../config/colorPalette";
 import {
   getScreenHeight,
   getScreenWidth,
-} from '../../../../../helpers/screenSize';
+} from "../../../../../helpers/screenSize";
 
 interface Step {
   id: number;
@@ -50,7 +50,7 @@ const ProgressStepper: React.FC<ProgressStepperProps> = ({
         })}
       </View>
 
-      {steps.map(step => {
+      {steps.map((step) => {
         const isPassed = step.id < currentStep;
         const isCurrent = step.id === currentStep;
         const isActive = isPassed || isCurrent;
@@ -60,7 +60,8 @@ const ProgressStepper: React.FC<ProgressStepperProps> = ({
             key={step.id}
             style={styles.stepContainer}
             onPress={() => handleStepPress(step.id)}
-            activeOpacity={0.7}>
+            activeOpacity={0.7}
+          >
             <View style={styles.circleWrapper}>
               {isCurrent && <View style={styles.haloEffect} />}
               <View
@@ -71,10 +72,11 @@ const ProgressStepper: React.FC<ProgressStepperProps> = ({
                     : isActive
                     ? styles.activeCircle
                     : styles.inactiveCircle,
-                ]}>
+                ]}
+              >
                 <Typography
-                  variant={TypographyVariant.LMEDIUM_BOLD}
-                  text={String(step.id).padStart(2, '0')}
+                  variant={TypographyVariant.LXSMALL_REGULAR}
+                  text={String(step.id).padStart(2, "0")}
                   customTextStyles={[
                     styles.stepNumber,
                     isPassed
@@ -106,22 +108,22 @@ const ProgressStepper: React.FC<ProgressStepperProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: getScreenWidth(4),
     paddingVertical: getScreenHeight(1.5),
     backgroundColor: ColorPalette.White,
-    position: 'relative',
+    position: "relative",
   },
   connectorContainer: {
-    position: 'absolute',
-    flexDirection: 'row',
+    position: "absolute",
+    flexDirection: "row",
     top: getScreenHeight(4.5),
     left: 0,
     right: 0,
     zIndex: 1,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     paddingHorizontal: getScreenWidth(12.5),
   },
   connector: {
@@ -137,33 +139,33 @@ const styles = StyleSheet.create({
     backgroundColor: ColorPalette.ConnectLine,
   },
   stepContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     zIndex: 2,
     flex: 1,
-    display: 'flex',
+    display: "flex",
     gap: getScreenWidth(2),
   },
   circleWrapper: {
-    position: 'relative',
+    position: "relative",
     width: getScreenWidth(13),
     height: getScreenWidth(13),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: getScreenHeight(0.5),
   },
   haloEffect: {
-    position: 'absolute',
+    position: "absolute",
     width: getScreenWidth(11),
     height: getScreenWidth(11),
     borderRadius: getScreenWidth(6.5),
-    backgroundColor: 'rgba(58, 90, 254, 0.12)',
+    backgroundColor: "rgba(58, 90, 254, 0.12)",
   },
   circle: {
     width: getScreenWidth(8),
     height: getScreenWidth(8),
     borderRadius: getScreenWidth(4),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 2,
   },
   activeCircle: {
@@ -191,7 +193,7 @@ const styles = StyleSheet.create({
     color: ColorPalette.GREY_TEXT_200,
   },
   stepLabel: {
-    textAlign: 'center',
+    textAlign: "center",
     flexShrink: 1,
     maxWidth: getScreenWidth(20),
   },

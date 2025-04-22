@@ -1,39 +1,40 @@
-import React, {useMemo, useState} from 'react';
-import {ScrollView, View} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import ArrowRightIcon from '../../../../assets/icons/ArrowRightIcon';
-import BellIcon from '../../../../assets/icons/BellIcon';
-import BookmarkNoteIcon from '../../../../assets/icons/BookmarkNoteIcon';
-import BrainIcon from '../../../../assets/icons/BrainIcon';
-import CurrencyIcon from '../../../../assets/icons/CurrencyIcon';
-import DownloadIcon from '../../../../assets/icons/DownloadIcon';
-import PackageIcon from '../../../../assets/icons/PackageIcon';
-import QuestionMarkIcon from '../../../../assets/icons/QuestionMarkIcon';
-import SearchIcon from '../../../../assets/icons/SearchIcon';
-import TotalSalesIcon from '../../../../assets/icons/TotalSalesIcon';
-import TrendIcon from '../../../../assets/icons/TrendIcon';
-import {MenuItem} from '../../../components/MainComponents/MenuItem/MenuItem';
-import {RecentOrder} from '../../../components/MainComponents/RecentOrder/RecentOrder';
-import {SlidingBar} from '../../../components/MainComponents/SlidingBar/SlidingBar';
-import ToggleButtons from '../../../components/MainComponents/ToggleButtons/ToggleButtons';
-import {Header} from '../../../components/UserComponents/Header/Header';
-import {Typography} from '../../../components/UserComponents/Typography/Typography';
-import {TypographyVariant} from '../../../components/UserComponents/Typography/Typography.types';
-import {ColorPalette} from '../../../config/colorPalette';
-import {getScreenHeight, getScreenWidth} from '../../../helpers/screenSize';
-import {styles} from './HomeScreen.styles';
-import {navigate} from '../../../navigation/utils/navigationRef';
-import {RootState} from '../../../redux/store';
-import {useSelector} from 'react-redux';
+import React, { useMemo, useState } from "react";
+import { ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import ArrowRightIcon from "../../../../assets/icons/ArrowRightIcon";
+import BellIcon from "../../../../assets/icons/BellIcon";
+import BookmarkNoteIcon from "../../../../assets/icons/BookmarkNoteIcon";
+import BrainIcon from "../../../../assets/icons/BrainIcon";
+import CurrencyIcon from "../../../../assets/icons/CurrencyIcon";
+import DownloadIcon from "../../../../assets/icons/DownloadIcon";
+import PackageIcon from "../../../../assets/icons/PackageIcon";
+import QuestionMarkIcon from "../../../../assets/icons/QuestionMarkIcon";
+import SearchIcon from "../../../../assets/icons/SearchIcon";
+import TotalSalesIcon from "../../../../assets/icons/TotalSalesIcon";
+import TrendIcon from "../../../../assets/icons/TrendIcon";
+import { MenuItem } from "../../../components/MainComponents/MenuItem/MenuItem";
+import { RecentOrder } from "../../../components/MainComponents/RecentOrder/RecentOrder";
+import { SlidingBar } from "../../../components/MainComponents/SlidingBar/SlidingBar";
+import ToggleButtons from "../../../components/MainComponents/ToggleButtons/ToggleButtons";
+import { Header } from "../../../components/UserComponents/Header/Header";
+import { Typography } from "../../../components/UserComponents/Typography/Typography";
+import { TypographyVariant } from "../../../components/UserComponents/Typography/Typography.types";
+import { ColorPalette } from "../../../config/colorPalette";
+import { getScreenHeight, getScreenWidth } from "../../../helpers/screenSize";
+import { styles } from "./HomeScreen.styles";
+import { navigate } from "../../../navigation/utils/navigationRef";
+import { RootState } from "../../../redux/store";
+import { useSelector } from "react-redux";
+import ArrowRightStyle from "@/assets/icons/ArrowRightStyle";
 
 const HomeScreen = () => {
   const userData = useSelector((state: RootState) => state.auth.userData);
 
-  const handleNewOrderPress = params => {
-    navigate('Dashboard', {
-      screen: 'Home',
+  const handleNewOrderPress = (params) => {
+    navigate("Dashboard", {
+      screen: "Home",
       params: {
-        screen: 'NewOrders',
+        screen: "NewOrders",
         params: params,
       },
     });
@@ -42,7 +43,7 @@ const HomeScreen = () => {
   const menuItems = useMemo(
     () => [
       {
-        label: 'No new orders',
+        label: "No new orders",
         leftIcon: (
           <PackageIcon style={undefined} color={ColorPalette.HomeIcon} />
         ),
@@ -53,7 +54,7 @@ const HomeScreen = () => {
         leftIconBackgroundColor: ColorPalette.VerySmallIconBack,
       },
       {
-        label: 'No orders to ship',
+        label: "No orders to ship",
         leftIcon: (
           <PackageIcon style={undefined} color={ColorPalette.PURPLE_200} />
         ),
@@ -61,10 +62,10 @@ const HomeScreen = () => {
         onPress: () => {
           handleNewOrderPress();
         },
-        leftIconBackgroundColor: 'rgba(145, 1, 207, 0.10)',
+        leftIconBackgroundColor: "rgba(145, 1, 207, 0.10)",
       },
       {
-        label: 'No orders delivered',
+        label: "No orders delivered",
         leftIcon: (
           <PackageIcon style={undefined} color={ColorPalette.Green_200} />
         ),
@@ -72,50 +73,50 @@ const HomeScreen = () => {
         onPress: () => {
           handleNewOrderPress();
         },
-        leftIconBackgroundColor: 'rgba(31, 193, 107, 0.10)',
+        leftIconBackgroundColor: "rgba(31, 193, 107, 0.10)",
       },
     ],
-    [],
+    []
   );
 
   const statusOptions = [
-    {id: 'pending', label: 'Pending'},
-    {id: 'accepted', label: 'Accepted'},
-    {id: 'cancelled', label: 'Cancelled'},
+    { id: "pending", label: "Pending" },
+    { id: "accepted", label: "Accepted" },
+    { id: "cancelled", label: "Cancelled" },
   ];
 
   const [selectedOption, setSelectedOption] = useState(statusOptions[0]);
 
   return (
-    <SafeAreaView style={{flex: 1}} edges={['bottom']}>
+    <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
       <Header
-        name={`Hello, ${userData?.firstname || 'User'}! 👋`}
+        name={`Hello, ${userData?.firstname || "User"}! 👋`}
         image={{
-          source: require('../../../../assets/images/placeholder-profile.png'),
+          source: require("../../../../assets/images/placeholder-profile.png"),
         }}
-        variant={TypographyVariant.LMEDIUM_BOLD}
+        variant={TypographyVariant.H6_SMALL_SEMIBOLD}
         textColor={ColorPalette.GREY_TEXT_500}
         rightIcons={[
           {
             icon: SearchIcon,
-            onPress: () => console.log('Search pressed'),
+            onPress: () => console.log("Search pressed"),
             size: 20,
             color: ColorPalette.GREY_TEXT_400,
-            strokeWidth: 2,
+            strokeWidth: 1.5,
           },
           {
             icon: BellIcon,
-            onPress: () => console.log('Bell pressed'),
+            onPress: () => console.log("Bell pressed"),
             size: 20,
             color: ColorPalette.GREY_TEXT_400,
-            strokeWidth: 2,
+            strokeWidth: 1.5,
           },
           {
             icon: QuestionMarkIcon,
-            onPress: () => console.log('Help pressed'),
+            onPress: () => console.log("Help pressed"),
             size: 24,
             color: ColorPalette.GREY_TEXT_400,
-            strokeWidth: 2,
+            strokeWidth: 1.5,
           },
         ]}
       />
@@ -123,21 +124,22 @@ const HomeScreen = () => {
         style={styles.mainContainer}
         contentContainerStyle={[
           styles.scrollContent,
-          {paddingBottom: getScreenHeight(4)},
+          { paddingBottom: getScreenHeight(4) },
         ]}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.verifyContainer}>
           <View style={styles.textVerifyContainer}>
             <Typography
               variant={TypographyVariant.H6_BOLD}
-              text="Complete these steps to start selling"
+              text="Get Started with Selling"
               customTextStyles={styles.textOne}
               numberOfLines={2}
               adjustsFontSizeToFit
             />
             <Typography
-              variant={TypographyVariant.LXSMALL_REGULAR}
-              text="Complete the following tasks to activate your seller account"
+              variant={TypographyVariant.LSMALL_REGULAR}
+              text="Complete these steps to activate your seller account."
               customTextStyles={styles.textTwo}
               numberOfLines={2}
               adjustsFontSizeToFit
@@ -153,7 +155,7 @@ const HomeScreen = () => {
               leftIcon={item.leftIcon}
               rightIcon={item.rightIcon}
               onPress={item.onPress}
-              textStyle={{color: ColorPalette.GREY_TEXT_500}}
+              textStyle={{ color: ColorPalette.GREY_TEXT_500 }}
               variant={TypographyVariant.LMEDIUM_MEDIUM}
               containerStyle={styles.menuContainer}
               contentStyle={{
@@ -161,8 +163,8 @@ const HomeScreen = () => {
               }}
               leftIconBackgroundColor={item.leftIconBackgroundColor}
               leftIconContainerStyle={{
-                alignItems: 'center',
-                justifyContent: 'center',
+                alignItems: "center",
+                justifyContent: "center",
                 padding: getScreenWidth(2),
                 paddingVertical: getScreenWidth(2),
                 borderRadius: getScreenWidth(2),
@@ -350,20 +352,20 @@ const HomeScreen = () => {
           <View style={styles.salesHeading}>
             <View style={styles.LeftHeading}>
               <Typography
-                variant={TypographyVariant.H5_BOLD}
+                variant={TypographyVariant.H5_SEMIBOLD}
                 text="Sales Overview"
                 customTextStyles={styles.countValue}
                 numberOfLines={1}
               />
               <View style={styles.countCaptionContainer}>
                 <Typography
-                  variant={TypographyVariant.LSMALL_SEMIBOLD}
+                  variant={TypographyVariant.LSMALL_REGULAR}
                   text="Total sales this week - "
                   customTextStyles={styles.countCaption}
                   numberOfLines={1}
                 />
                 <Typography
-                  variant={TypographyVariant.LSMALL_BOLD}
+                  variant={TypographyVariant.LSMALL_SEMIBOLD}
                   text="25,000€"
                   customTextStyles={styles.countCaptionOne}
                   numberOfLines={1}
@@ -379,21 +381,23 @@ const HomeScreen = () => {
         <View style={styles.recentOrdersContainer}>
           <View style={styles.recentOrderTitle}>
             <Typography
-              variant={TypographyVariant.H6_BOLD}
+              variant={TypographyVariant.H6_SEMIBOLD}
               text="Recent Orders"
               customTextStyles={styles.countValue}
               numberOfLines={1}
             />
             <View style={styles.viewAll}>
               <Typography
-                variant={TypographyVariant.LSMALL_REGULAR}
+                variant={TypographyVariant.PSMALL_MEDIUM}
                 text="View All"
                 customTextStyles={styles.viewAllText}
                 numberOfLines={1}
               />
-              <ArrowRightIcon
+              <ArrowRightStyle
                 style={undefined}
                 color={ColorPalette.PURPLE_200}
+                size={13}
+                onPress={undefined}
               />
             </View>
           </View>
@@ -412,43 +416,43 @@ const HomeScreen = () => {
             {[
               {
                 orderImage:
-                  'https://prosodylondon.com/wp-content/uploads/2024/01/perfume-bottles-ingredients.jpg',
-                productName: 'Nike Air Max 270 React Premium Shoes',
-                orderId: '448448',
-                customerName: 'John Smith',
-                orderDate: 'Oct 28, 2024',
+                  "https://prosodylondon.com/wp-content/uploads/2024/01/perfume-bottles-ingredients.jpg",
+                productName: "Nike Air Max 270 React Premium Shoes",
+                orderId: "448448",
+                customerName: "John Smith",
+                orderDate: "Oct 28, 2024",
                 orderAmount: 89.9,
-                status: 'Pending',
+                status: "Pending",
               },
               {
                 orderImage:
-                  'https://prosodylondon.com/wp-content/uploads/2024/01/perfume-bottles-ingredients.jpg',
-                productName: 'Nike Air Max 270 React Premium Shoes',
-                orderId: '448448',
-                customerName: 'John Smith',
-                orderDate: 'Oct 28, 2024',
+                  "https://prosodylondon.com/wp-content/uploads/2024/01/perfume-bottles-ingredients.jpg",
+                productName: "Nike Air Max 270 React Premium Shoes",
+                orderId: "448448",
+                customerName: "John Smith",
+                orderDate: "Oct 28, 2024",
                 orderAmount: 89.9,
-                status: 'Cancelled',
+                status: "Cancelled",
               },
               {
                 orderImage:
-                  'https://prosodylondon.com/wp-content/uploads/2024/01/perfume-bottles-ingredients.jpg',
-                productName: 'Nike Air Max 270 React Premium Shoes',
-                orderId: '448448',
-                customerName: 'John Smith',
-                orderDate: 'Oct 28, 2024',
+                  "https://prosodylondon.com/wp-content/uploads/2024/01/perfume-bottles-ingredients.jpg",
+                productName: "Nike Air Max 270 React Premium Shoes",
+                orderId: "448448",
+                customerName: "John Smith",
+                orderDate: "Oct 28, 2024",
                 orderAmount: 89.9,
-                status: 'Delivered',
+                status: "Delivered",
               },
               {
                 orderImage:
-                  'https://prosodylondon.com/wp-content/uploads/2024/01/perfume-bottles-ingredients.jpg',
-                productName: 'Nike Air Max 270 React Premium Shoes',
-                orderId: '448448',
-                customerName: 'John Smith',
-                orderDate: 'Oct 28, 2024',
+                  "https://prosodylondon.com/wp-content/uploads/2024/01/perfume-bottles-ingredients.jpg",
+                productName: "Nike Air Max 270 React Premium Shoes",
+                orderId: "448448",
+                customerName: "John Smith",
+                orderDate: "Oct 28, 2024",
                 orderAmount: 89.9,
-                status: 'Pending',
+                status: "Pending",
               },
             ].map((order, index, array) => (
               <RecentOrder

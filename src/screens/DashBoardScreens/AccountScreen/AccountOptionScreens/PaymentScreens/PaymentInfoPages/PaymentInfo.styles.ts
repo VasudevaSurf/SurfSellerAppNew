@@ -1,18 +1,18 @@
-import {StyleSheet} from 'react-native';
+import { StyleSheet } from "react-native";
 import {
   getScreenWidth,
   getScreenHeight,
-} from '../../../../../../helpers/screenSize';
-import {ColorPalette} from '../../../../../../config/colorPalette';
-import {BorderRadius} from '../../../../../../config/globalStyles';
+} from "../../../../../../helpers/screenSize";
+import { ColorPalette } from "../../../../../../config/colorPalette";
+import { BorderRadius } from "../../../../../../config/globalStyles";
 
 export const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
   mainContainer: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     flex: 1,
   },
   scrollContent: {
@@ -21,32 +21,32 @@ export const styles = StyleSheet.create({
   },
   // Stripe Connect Section
   stripEditContainer: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: ColorPalette.White,
     padding: getScreenWidth(4),
   },
   stripEditContainerOne: {
-    display: 'flex',
-    flexDirection: 'row',
+    display: "flex",
+    flexDirection: "row",
     marginLeft: getScreenWidth(3),
     gap: getScreenWidth(2.5),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   connectContainer: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: getScreenWidth(1),
   },
   connectContainerOne: {
-    display: 'flex',
-    flexDirection: 'row',
+    display: "flex",
+    flexDirection: "row",
     gap: getScreenWidth(1.5),
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
   statusIcon: {
     width: getScreenWidth(4),
@@ -62,28 +62,28 @@ export const styles = StyleSheet.create({
     backgroundColor: ColorPalette.White,
   },
   bgContainer: {
-    display: 'flex',
-    flexDirection: 'row',
+    display: "flex",
+    flexDirection: "row",
     paddingVertical: getScreenHeight(3),
     paddingHorizontal: getScreenWidth(3),
-    backgroundColor: 'rgba(145, 1, 207, 0.10)',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: "rgba(145, 1, 207, 0.10)",
+    alignItems: "center",
+    justifyContent: "space-between",
     borderRadius: BorderRadius.Small,
   },
   walletBalanceContainer: {
-    display: 'flex',
-    flexDirection: 'row',
+    display: "flex",
+    flexDirection: "row",
     gap: getScreenWidth(3),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   walletBalanceContainerOne: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: getScreenWidth(0.5),
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    alignItems: "flex-start",
+    justifyContent: "center",
   },
   withdrawButton: {
     width: getScreenWidth(26),
@@ -106,25 +106,34 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   tabBarContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    backgroundColor: "transparent", // Making container transparent
   },
   tabBar: {
-    backgroundColor: 'white',
+    backgroundColor: "transparent",
     elevation: 0,
     shadowOpacity: 0,
   },
   tab: {
-    width: 'auto',
+    width: "auto",
+  },
+  tabButtonWrapper: {
+    flexDirection: "row",
+    backgroundColor: ColorPalette.SearchBack,
+    borderRadius: BorderRadius.Small,
+    alignSelf: "center", // Center the wrapper
+    padding: getScreenHeight(0.5),
+    gap: getScreenWidth(3), // Gap between tab buttons
   },
   tabButton: {
     paddingVertical: getScreenHeight(1),
-    paddingHorizontal: getScreenWidth(13),
+    paddingHorizontal: getScreenWidth(10),
     borderRadius: BorderRadius.XSmall,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   activeTabButton: {
-    backgroundColor: ColorPalette.ProgressLine,
+    backgroundColor: ColorPalette.ProgressLine, // Purple color for active tab
   },
 
   // Tab Content
@@ -150,29 +159,29 @@ export const styles = StyleSheet.create({
     marginTop: getScreenHeight(1),
   },
   payoutItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingVertical: getScreenHeight(2.5),
     borderBottomWidth: 1,
     borderBottomColor: ColorPalette.GREY_100,
   },
   payoutItemLeft: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "center",
     gap: getScreenHeight(0.5),
   },
   payoutItemHeader: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: getScreenWidth(1),
   },
   payoutItemRight: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: getScreenHeight(0.5),
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   statusBadge: {
     paddingVertical: getScreenHeight(0.25),
@@ -180,8 +189,8 @@ export const styles = StyleSheet.create({
     borderRadius: BorderRadius.Small,
   },
   emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: getScreenHeight(5),
   },
   customButton: {

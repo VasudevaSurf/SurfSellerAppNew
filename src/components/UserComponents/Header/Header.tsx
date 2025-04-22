@@ -1,13 +1,13 @@
-import React from 'react';
-import {Image, TouchableOpacity, View} from 'react-native';
-import {ColorPalette} from '../../../config/colorPalette';
-import {Typography} from '../Typography/Typography';
-import {TypographyVariant} from '../Typography/Typography.types';
-import {headerStyles} from './Header.styles';
-import {HeaderProps} from './Header.types';
-import {Badge} from '../Badges/Badge';
-import {BadgeType, BadgeVariant} from '../Badges/Badge.types';
-import DotIcon from '../../../../assets/icons/DotIcon';
+import React from "react";
+import { Image, TouchableOpacity, View } from "react-native";
+import { ColorPalette } from "../../../config/colorPalette";
+import { Typography } from "../Typography/Typography";
+import { TypographyVariant } from "../Typography/Typography.types";
+import { headerStyles } from "./Header.styles";
+import { HeaderProps } from "./Header.types";
+import { Badge } from "../Badges/Badge";
+import { BadgeType, BadgeVariant } from "../Badges/Badge.types";
+import DotIcon from "../../../../assets/icons/DotIcon";
 
 export const Header: React.FC<HeaderProps> = ({
   image,
@@ -24,18 +24,18 @@ export const Header: React.FC<HeaderProps> = ({
       <View style={headerStyles.leftSection}>
         {image && (
           <Image
-            source={image.source || {uri: image.uri}}
+            source={image.source || { uri: image.uri }}
             style={[headerStyles.profileImage, image.style]}
           />
         )}
         {leftIcon && (
           <View style={[headerStyles.leftIconContainer]}>{leftIcon}</View>
         )}
-        <View style={[headerStyles.nameContainer, !image && {marginLeft: 0}]}>
+        <View style={[headerStyles.nameContainer, !image && { marginLeft: 0 }]}>
           <Typography
             variant={variant}
             text={name}
-            customTextStyles={{color: textColor}}
+            customTextStyles={{ color: textColor }}
           />
           {subHeader && (
             <View style={headerStyles.badgeWrapper}>
@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
               return (
                 <Badge
                   key={index}
-                  text={item.text || ''}
+                  text={item.text || ""}
                   type={item.badgeType || BadgeType.PRIMARY}
                   variant={item.badgeVariant || BadgeVariant.FILLED}
                   onPress={item.onPress}
@@ -86,7 +86,8 @@ export const Header: React.FC<HeaderProps> = ({
               <TouchableOpacity
                 key={index}
                 onPress={item.onPress}
-                style={headerStyles.iconButton}>
+                style={headerStyles.iconButton}
+              >
                 <Icon
                   size={item.size || 24}
                   color={item.color || ColorPalette.GREY_TEXT_400}

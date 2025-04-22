@@ -1,11 +1,11 @@
-import {StyleSheet} from 'react-native';
-import {ColorPalette} from '../../../config/colorPalette';
-import {getScreenWidth, getScreenHeight} from '../../../helpers/screenSize';
+import { StyleSheet } from "react-native";
+import { ColorPalette } from "../../../config/colorPalette";
+import { getScreenWidth, getScreenHeight } from "../../../helpers/screenSize";
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: getScreenWidth(4),
     backgroundColor: ColorPalette.White,
     gap: getScreenHeight(1.5),
@@ -14,36 +14,36 @@ export const styles = StyleSheet.create({
   imageContainer: {
     width: getScreenWidth(26),
     borderRadius: getScreenWidth(2),
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   productImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   infoContainer: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   infoContainerOne: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   productNameWrapper: {
     flex: 1,
     marginRight: getScreenWidth(3.2),
   },
   productNameText: {
-    color: ColorPalette.GREY_TEXT_500,
+    color: ColorPalette.GREY_TEXT_300,
     flexShrink: 1,
   },
   iconContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: getScreenWidth(2),
-    alignItems: 'center',
+    alignItems: "center",
   },
   infoContainerTwo: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: getScreenWidth(4.8),
     marginTop: getScreenHeight(1.5),
   },
@@ -54,18 +54,18 @@ export const styles = StyleSheet.create({
     gap: getScreenWidth(1),
   },
   infoContainerThree: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: getScreenHeight(1.5),
   },
   stockContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: getScreenWidth(1),
   },
   toggleContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   labelText: {
     color: ColorPalette.GREY_TEXT_100,
@@ -74,7 +74,7 @@ export const styles = StyleSheet.create({
     color: ColorPalette.GREY_TEXT_500,
   },
   toggleLabel: {
-    color: ColorPalette.GREY_TEXT_500,
-    fontWeight: '500',
+    color: ColorPalette.GREY_TEXT_100,
+    fontWeight: "500",
   },
 });

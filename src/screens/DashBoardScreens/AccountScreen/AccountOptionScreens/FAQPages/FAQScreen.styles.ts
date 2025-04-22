@@ -1,10 +1,10 @@
-import {StyleSheet} from 'react-native';
-import {ColorPalette} from '../../../../../config/colorPalette';
+import { StyleSheet } from "react-native";
+import { ColorPalette } from "../../../../../config/colorPalette";
 import {
   getScreenHeight,
   getScreenWidth,
-} from '../../../../../helpers/screenSize';
-import {BorderRadius} from '../../../../../config/globalStyles';
+} from "../../../../../helpers/screenSize";
+import { BorderRadius } from "../../../../../config/globalStyles";
 
 export const styles = StyleSheet.create({
   container: {
@@ -18,19 +18,19 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     flexGrow: 1,
     gap: getScreenHeight(1.5),
   },
   searchContainer: {
     padding: getScreenWidth(4),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: ColorPalette.White,
   },
   categoryContainer: {
-    width: '100%',
+    width: "100%",
   },
   titleContainer: {
     paddingVertical: getScreenHeight(2.5),
@@ -42,7 +42,7 @@ export const styles = StyleSheet.create({
     color: ColorPalette.Black,
   },
   faqItemsContainer: {
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   menuItemContainer: {
     paddingVertical: getScreenHeight(2.5),
@@ -56,13 +56,13 @@ export const styles = StyleSheet.create({
     marginRight: getScreenWidth(10),
   },
   floatingChatButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: getScreenHeight(8),
     right: getScreenWidth(5),
     borderRadius: BorderRadius.Full,
     backgroundColor: ColorPalette.PURPLE_300,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: getScreenHeight(1.5),
   },
 });

@@ -129,7 +129,7 @@ const ChatScreen = () => {
               {/* User message time (left side) */}
               {msg.isUser && (
                 <Typography
-                  variant={TypographyVariant.LXSMALL_REGULAR}
+                  variant={TypographyVariant.PSMALL_MEDIUM}
                   customTextStyles={[
                     styles.messageTime,
                     styles.userMessageTime,
@@ -148,7 +148,7 @@ const ChatScreen = () => {
                 ]}
               >
                 <Typography
-                  variant={TypographyVariant.PMEDIUM_REGULAR}
+                  variant={TypographyVariant.PSMALL_REGULAR}
                   customTextStyles={[
                     msg.isUser ? styles.userMessageText : styles.botMessageText,
                   ]}
