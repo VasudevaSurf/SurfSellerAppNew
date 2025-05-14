@@ -2,7 +2,7 @@ import axios from "axios";
 import { API_ENDPOINTS } from "../constants/apiEndpoints";
 // import {API_BASE_URL, API_AUTH_HEADER} from '@env'
 
-const apiBaseUrl = process.env.API_BASE_URL;
+const apiBaseUrl = "https://dev.surf.mt/2.0/api";
 const apiAuthHeader = process.env.API_AUTH_HEADER;
 
 export interface Product {
