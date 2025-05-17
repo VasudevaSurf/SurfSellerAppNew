@@ -1,12 +1,20 @@
-import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   fetchProductsApi,
+  fetchProductDetailsApi,
   Product,
   searchProductsApi,
-} from '../../services/apiService';
+} from "../../services/apiService";
+
+// Define the ProductDetail interface
+export interface ProductDetail extends Product {
+  full_description?: string;
+  // Add any additional fields that might be in the product details response
+}
 
 interface ProductsState {
   products: Product[];
+  productDetails: ProductDetail | null; // Add this line
   loading: boolean;
   error: string | null;
   totalItems: number;
@@ -15,6 +23,7 @@ interface ProductsState {
 
 const initialState: ProductsState = {
   products: [],
+  productDetails: null, // Initialize the productDetails
   loading: false,
   error: null,
   totalItems: 0,
@@ -22,10 +31,10 @@ const initialState: ProductsState = {
 };
 
 export const fetchProducts = createAsyncThunk(
-  'products/fetchProducts',
+  "products/fetchProducts",
   async (
-    {userId, page}: {userId: string; page?: number},
-    {rejectWithValue},
+    { userId, page }: { userId: string; page?: number },
+    { rejectWithValue }
   ) => {
     try {
       const response = await fetchProductsApi(userId, page);
@@ -35,20 +44,34 @@ export const fetchProducts = createAsyncThunk(
         page: page || 1,
       };
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to fetch products');
+      return rejectWithValue(error.message || "Failed to fetch products");
     }
-  },
+  }
+);
+
+export const fetchProductDetails = createAsyncThunk(
+  "products/fetchProductDetails",
+  async (productId: string, { rejectWithValue }) => {
+    try {
+      const response = await fetchProductDetailsApi(productId);
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.message || "Failed to fetch product details"
+      );
+    }
+  }
 );
 
 export const searchProducts = createAsyncThunk(
-  'products/searchProducts',
+  "products/searchProducts",
   async (
     {
       userId,
       searchTerm,
       page,
-    }: {userId: string; searchTerm: string; page?: number},
-    {rejectWithValue},
+    }: { userId: string; searchTerm: string; page?: number },
+    { rejectWithValue }
   ) => {
     try {
       const response = await searchProductsApi(userId, searchTerm, page);
@@ -58,18 +81,17 @@ export const searchProducts = createAsyncThunk(
         page: page || 1,
       };
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to search products');
+      return rejectWithValue(error.message || "Failed to search products");
     }
-  },
+  }
 );
 
 const productsSlice = createSlice({
-  name: 'products',
+  name: "products",
   initialState,
   reducers: {},
-  extraReducers: builder => {
-    // Fetch Products
-    builder.addCase(fetchProducts.pending, state => {
+  extraReducers: (builder) => {
+    builder.addCase(fetchProducts.pending, (state) => {
       state.loading = true;
       state.error = null;
     });
@@ -85,7 +107,7 @@ const productsSlice = createSlice({
     });
 
     // Search Products
-    builder.addCase(searchProducts.pending, state => {
+    builder.addCase(searchProducts.pending, (state) => {
       state.loading = true;
       state.error = null;
     });
@@ -96,6 +118,20 @@ const productsSlice = createSlice({
       state.currentPage = action.payload.page;
     });
     builder.addCase(searchProducts.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Fetch Product Details
+    builder.addCase(fetchProductDetails.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(fetchProductDetails.fulfilled, (state, action) => {
+      state.loading = false;
+      state.productDetails = action.payload;
+    });
+    builder.addCase(fetchProductDetails.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     });
