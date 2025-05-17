@@ -31,23 +31,51 @@ import ArrowDownIcon from "../../../../../assets/icons/ArrowDownIcon";
 import { StatusModal } from "../../../../components/MainComponents/StatusModal/StatusModal";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../../../redux/store";
-import { fetchOrderDetailsApi } from "../../../../services/apiService";
+import {
+  fetchOrderDetails,
+  updateOrderStatus,
+} from "../../../../redux/slices/orderDetailsSlice";
 
 const OrderDetail: React.FC<OrderDetailProps> = ({ route }) => {
   const dispatch = useDispatch();
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [orderData, setOrderData] = useState<any>(null);
+  const { orderDetails, loading, error } = useSelector(
+    (state: RootState) => state.orderDetails
+  );
 
   const userId = useSelector(
     (state: RootState) => state.auth.userData?.user_id
   );
 
-  // Important: Get data from route params
+  // Get data from route params
   const params = route?.params || {};
   const orderId = params.orderId;
+
+  // Local state for UI while data is loading
+  const [currentStatus, setCurrentStatus] = useState(
+    params.orderStatus || "Pending"
+  );
+  const [inventory, setInventory] = useState(1);
+  const [customerInfo, setCustomerInfo] = useState({
+    name: params.orderName || "",
+    email: params.orderEmail || "",
+    phone: params.orderPhone || "",
+  });
+  const [productName, setProductName] = useState(params.orderName || "Product");
+  const [productImage, setProductImage] = useState(
+    params.orderImage || "https://picsum.photos/202"
+  );
+  const [subTotal, setSubTotal] = useState(params.orderPrice || "€0.00");
+  const [shippingCost, setShippingCost] = useState("€0.00");
+  const [totalPrice, setTotalPrice] = useState(params.orderPrice || "€0.00");
+  const [orderData, setOrderData] = useState({
+    orderNumber: params.orderNumber || orderId,
+    orderDate: params.orderDate || new Date().toLocaleDateString(),
+    orderTime: params.orderTime || new Date().toLocaleTimeString(),
+    orderImage: params.orderImage || "https://picsum.photos/202",
+    orderName: params.orderName || "Product",
+    orderStatus: params.orderStatus || "Pending",
+  });
 
   // Log for debugging
   useEffect(() => {
@@ -59,159 +87,111 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ route }) => {
     console.log("OrderDetail - Order ID:", orderId);
   }, [params, userId, orderId]);
 
-  // Calculated values that will be updated with real data
-  const [subTotal, setSubTotal] = useState("€0.00");
-  const [shippingCost, setShippingCost] = useState("€0.00");
-  const [totalPrice, setTotalPrice] = useState("€0.00");
-  const [inventory, setInventory] = useState(0);
-  const [customerInfo, setCustomerInfo] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  // Format price consistently
+  const formatPrice = (price: any): string => {
+    if (!price) return "€0.00";
 
-  useEffect(() => {
-    // Set fallback data from route params - we'll do this immediately
-    if (params && Object.keys(params).length > 0) {
-      setOrderData({
-        orderNumber: params.orderNumber || params.orderId,
-        orderDate: params.orderDate || "",
-        orderTime: params.orderTime || "",
-        orderImage: params.orderImage || "https://picsum.photos/202",
-        orderName: params.orderName || "Product",
-        orderStatus: params.orderStatus || "Pending",
-      });
-
-      // Set customer information from params
-      setCustomerInfo({
-        name: params.orderName || "",
-        email: params.orderEmail || "",
-        phone: params.orderPhone || "",
-      });
-
-      // Set pricing information
-      setTotalPrice(params.orderPrice || "€0.00");
-      setCurrentStatus(params.orderStatus || "Pending");
+    // If it's already a string with Euro symbol
+    if (typeof price === "string" && price.startsWith("€")) {
+      return price;
     }
 
-    // Fetch the detailed order info from API
-    const fetchOrderDetails = async () => {
-      if (!userId || !orderId) {
-        console.log("OrderDetail - Missing user ID or order ID");
-        setLoading(false);
-        if (!orderId) {
-          setError("Missing order ID");
-        } else if (!userId) {
-          setError("Missing user ID");
-        }
-        return;
+    // If it's a number or a string number
+    return `€${price}`;
+  };
+
+  useEffect(() => {
+    // Only fetch if we have both userID and orderID
+    if (userId && orderId) {
+      dispatch(fetchOrderDetails({ userId, orderId }) as any);
+    }
+  }, [dispatch, userId, orderId]);
+
+  // Update local state when orderDetails changes
+  useEffect(() => {
+    if (orderDetails) {
+      // Get the first product information if available
+      let firstProduct = null;
+      if (orderDetails.products && orderDetails.products.length > 0) {
+        firstProduct = orderDetails.products[0];
+        setProductName(firstProduct.product || params.orderName || "Product");
+        setProductImage(
+          firstProduct.image_url ||
+            params.orderImage ||
+            "https://picsum.photos/202"
+        );
+        setInventory(firstProduct.amount || 1);
       }
 
-      try {
-        console.log(
-          `OrderDetail - Fetching order details for user ${userId}, order ${orderId}`
-        );
-        setLoading(true);
-        const response = await fetchOrderDetailsApi(userId, orderId);
-        console.log(
-          "OrderDetail - API response:",
-          JSON.stringify(response, null, 2)
-        );
+      // Important - use the date/time that came from the route params if available
+      // This ensures consistency with the OrderScreen
+      const orderDate =
+        params.orderDate ||
+        orderDetails.formattedDate ||
+        orderDetails.timestamp;
+      const orderTime = params.orderTime || orderDetails.formattedTime;
 
-        // Check if response exists before accessing properties
-        if (!response) {
-          throw new Error("Empty response from API");
-        }
+      // Set order data with preference for the route params (for consistency)
+      setOrderData({
+        orderNumber:
+          orderDetails.order_number || orderDetails.order_id || orderId,
+        orderDate: orderDate,
+        orderTime: orderTime,
+        orderImage: productImage,
+        orderName: productName,
+        orderStatus:
+          mapStatusToDisplay(orderDetails.status) ||
+          params.orderStatus ||
+          "Pending",
+      });
 
-        // Better property checking with more detailed error message
-        if (!response.order_data) {
-          console.error("OrderDetail - Response format unexpected:", response);
-          throw new Error("Response missing order_data property");
-        }
+      // Set customer information
+      setCustomerInfo({
+        name:
+          `${orderDetails.firstname || ""} ${
+            orderDetails.lastname || ""
+          }`.trim() ||
+          orderDetails.customer?.name ||
+          params.orderName ||
+          "",
+        email:
+          orderDetails.email ||
+          orderDetails.customer?.email ||
+          params.orderEmail ||
+          "",
+        phone:
+          orderDetails.phone ||
+          orderDetails.customer?.phone ||
+          params.orderPhone ||
+          "",
+      });
 
-        const order = response.order_data;
+      // Set pricing information, ensuring consistent format
+      setTotalPrice(formatPrice(orderDetails.total));
+      setSubTotal(formatPrice(orderDetails.subtotal || orderDetails.total));
+      setShippingCost(formatPrice(orderDetails.shipping_cost || "0.00"));
 
-        // Set order data
-        setOrderData({
-          orderNumber: order.order_number || order.order_id || orderId,
-          orderDate: order.timestamp
-            ? new Date(parseInt(order.timestamp) * 1000).toLocaleDateString()
-            : new Date().toLocaleDateString(),
-          orderTime: order.timestamp
-            ? new Date(parseInt(order.timestamp) * 1000).toLocaleTimeString()
-            : new Date().toLocaleTimeString(),
-          orderImage:
-            order.products && order.products.length > 0
-              ? order.products[0].image_url || "https://picsum.photos/202"
-              : "https://picsum.photos/202",
-          orderName:
-            order.products && order.products.length > 0
-              ? order.products[0].product
-              : params.orderName || "Product",
-          orderStatus: order.status || params.orderStatus || "Pending",
-        });
-
-        // Set customer information
-        setCustomerInfo({
-          name:
-            `${order.firstname || ""} ${order.lastname || ""}`.trim() ||
-            order.customer?.name ||
-            params.orderName ||
-            "",
-          email:
-            order.email || order.customer?.email || params.orderEmail || "",
-          phone:
-            order.phone || order.customer?.phone || params.orderPhone || "",
-        });
-
-        // Set pricing information
-        setTotalPrice(order.total || params.orderPrice || "€0.00");
-
-        // Usually these would come from the API, using placeholder values
-        setSubTotal(
-          order.subtotal || order.total || params.orderPrice || "€0.00"
-        );
-        setShippingCost(order.shipping_cost || "€0.00");
-
-        // Set inventory (placeholder)
-        setInventory(
-          order.products && order.products.length > 0
-            ? order.products[0].amount || 1
-            : 1
-        );
-
-        // Set current status
-        setCurrentStatus(
-          mapStatusToDisplay(order.status || params.orderStatus)
-        );
-
-        // Clear any previous errors since we succeeded
-        setError(null);
-      } catch (err: any) {
-        console.error("OrderDetail - Error fetching order details:", err);
-        setError(`Error fetching details: ${err.message || "Unknown error"}`);
-
-        // Don't overwrite the route params data that's already set
-        // This way the UI still shows something even if the API fails
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrderDetails();
-  }, [userId, orderId, params]);
+      // Set current status using the same mapping as OrderScreen
+      setCurrentStatus(
+        mapStatusToDisplay(
+          orderDetails.status || params.orderStatus || "Pending"
+        )
+      );
+    }
+  }, [orderDetails, params]);
 
   const mapStatusToDisplay = (apiStatus: string): string => {
+    // Use the same mapping as in OrderScreen for consistency
     const statusMap: { [key: string]: string } = {
       O: "Pending",
-      P: "Accepted",
+      P: "Processing",
       C: "Completed",
       F: "Failed",
-      I: "Canceled",
+      I: "Cancelled",
       D: "Declined",
-      B: "Backordered",
-      Y: "Awaiting call",
-      A: "Fraud checking",
+      B: "Shipping",
+      Y: "Processing",
+      A: "Processing",
     };
 
     return statusMap[apiStatus] || apiStatus || "Processing";
@@ -322,7 +302,31 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ route }) => {
   const handleStatusChange = (newStatus) => {
     setCurrentStatus(newStatus);
     console.log("Status changed to:", newStatus);
-    // Here you would add an API call to update the status in the backend
+
+    // Update the status in Redux
+    if (orderDetails) {
+      // Convert display status back to API status code
+      const apiStatusCode =
+        Object.keys(statusMap).find((key) => statusMap[key] === newStatus) ||
+        "P"; // Default to Processing if not found
+
+      dispatch(updateOrderStatus(apiStatusCode));
+
+      // Here you would add an API call to update the status in the backend
+    }
+  };
+
+  // Status mapping for conversion between display and API values
+  const statusMap = {
+    O: "Pending",
+    P: "Processing",
+    C: "Completed",
+    F: "Failed",
+    I: "Cancelled",
+    D: "Declined",
+    B: "Shipping",
+    Y: "Processing",
+    A: "Processing",
   };
 
   // Show loading spinner while initial data fetching completes
@@ -447,14 +451,14 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ route }) => {
             <View style={styles.productRow}>
               <View style={styles.imageContainer}>
                 <Image
-                  source={{ uri: orderData.orderImage }}
+                  source={{ uri: productImage }}
                   style={styles.productImage}
                   resizeMode="cover"
                 />
               </View>
               <View style={styles.productInfo}>
                 <Typography
-                  text={orderData.orderName}
+                  text={productName}
                   variant={TypographyVariant.PSMALL_MEDIUM}
                   customTextStyles={{
                     color: ColorPalette.GREY_TEXT_500,
@@ -555,7 +559,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ route }) => {
               customContainerStyle={{
                 paddingVertical: getScreenHeight(1.5),
                 paddingHorizontal: getScreenHeight(2),
-                backgroundColor: getStatusColor(orderData.orderStatus),
+                backgroundColor: getStatusColor(currentStatus),
               }}
               textVariant={TypographyVariant.LMEDIUM_MEDIUM}
               rightIcon={ArrowDownIcon}
@@ -574,26 +578,25 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ route }) => {
   );
 };
 
-// Helper function to determine status color based on API status
+// Helper function to determine status color based on status
 const getStatusColor = (status: string): string => {
   const statusColorMap: { [key: string]: string } = {
     O: "#ff9522", // Pending
-    P: "#97cf4d", // Accepted
+    P: "#97cf4d", // Processing
     C: "#97cf4d", // Completed
     F: "#ff5215", // Failed
-    I: "#c2c2c2", // Canceled
+    I: "#c2c2c2", // Cancelled
     D: "#ff5215", // Declined
-    B: "#28abf6", // Backordered
+    B: "#28abf6", // Shipping
     Y: "#cc4125", // Awaiting call
     A: "#dcdcdc", // Fraud checking
     Pending: "#ff9522",
-    Accepted: "#97cf4d",
+    Processing: "#97cf4d",
     Completed: "#97cf4d",
     Failed: "#ff5215",
-    Canceled: "#c2c2c2",
+    Cancelled: "#c2c2c2",
     Declined: "#ff5215",
-    Backordered: "#28abf6",
-    Processing: "#97cf4d",
+    Shipping: "#28abf6",
   };
 
   return statusColorMap[status] || ColorPalette.Green_200;
