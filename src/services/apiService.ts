@@ -3,7 +3,8 @@ import { API_ENDPOINTS } from "../constants/apiEndpoints";
 // import {API_BASE_URL, API_AUTH_HEADER} from '@env'
 
 const API_BASE_URL = "https://dev.surf.mt/2.0/api";
-const API_AUTH_HEADER = process.env.API_AUTH_HEADER;
+const API_AUTH_HEADER =
+  "Basic YWRtaW5Ac3VyZi5tdDpOOW9aMnlXMzc3cEg1VTExNTFiY3YyZlYyNDYySTk1NA==";
 
 export interface Product {
   product_id: string;
@@ -26,6 +27,12 @@ export interface ProductsResponse {
 
 export interface ProductDetailsResponse {
   product_data: Product;
+  sections?: any[];
+  images?: any[];
+  category_listing?: any[];
+  currency?: {
+    symbol: string;
+  };
 }
 
 export interface Order {
@@ -167,6 +174,15 @@ export interface InitializerResponse {
   result: boolean;
 }
 
+// Add new interface for filter options
+export interface ProductFilters {
+  status?: "A" | "P" | "D" | "all";
+  lowStock?: boolean;
+  lowStockThreshold?: number;
+  page?: number;
+  itemsPerPage?: number;
+}
+
 export const fetchInitializerApi = async () => {
   try {
     const response = await apiClient.get(`/api.php`, {
@@ -235,23 +251,118 @@ export const updateProfileApi = async (
   }
 };
 
+// Updated fetchProductsApi with filter support
 export const fetchProductsApi = async (
   userId: string,
+  filters: ProductFilters = {}
+) => {
+  try {
+    const {
+      status = "all",
+      lowStock = false,
+      lowStockThreshold = 2,
+      page = 1,
+      itemsPerPage = 10,
+    } = filters;
+
+    // Build the URL with query parameters
+    let url = `${API_BASE_URL}/api.php?_d=NtSeProductsApi&user_id=${userId}`;
+
+    // Add status filter if not 'all'
+    if (status !== "all") {
+      url += `&status=${status}`;
+    }
+
+    // Add low stock filter
+    if (lowStock) {
+      url += `&status=A&amount_to=${lowStockThreshold}`;
+    }
+
+    // Add pagination parameters
+    url += `&page=${page}&items_per_page=${itemsPerPage}`;
+
+    console.log("Fetching products from URL:", url);
+
+    const response = await axios({
+      method: "GET",
+      url: url,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: API_AUTH_HEADER,
+      },
+      data: {
+        user_login: "csctest@gmail.com",
+        password: "Zaid@123",
+      },
+    });
+
+    return response.data as ProductsResponse;
+  } catch (error) {
+    console.error("Fetch Products API error:", error);
+    throw error;
+  }
+};
+
+// New function to get products by specific status
+export const fetchProductsByStatusApi = async (
+  userId: string,
+  status: "A" | "P" | "D",
   page: number = 1,
   itemsPerPage: number = 10
 ) => {
   try {
-    const response = await apiClient.get(`/api.php`, {
-      params: {
-        _d: "NtSeProductsApi",
-        user_id: userId,
-        page,
-        items_per_page: itemsPerPage,
+    const url = `${API_BASE_URL}/api.php?_d=NtSeProductsApi&user_id=${userId}&status=${status}&page=${page}&items_per_page=${itemsPerPage}`;
+
+    console.log(`Fetching ${status} products from URL:`, url);
+
+    const response = await axios({
+      method: "GET",
+      url: url,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: API_AUTH_HEADER,
+      },
+      data: {
+        user_login: "csctest@gmail.com",
+        password: "Zaid@123",
       },
     });
+
     return response.data as ProductsResponse;
   } catch (error) {
-    console.error("Fetch Products API error:", error);
+    console.error("Fetch Products By Status API error:", error);
+    throw error;
+  }
+};
+
+// New function to get low stock products
+export const fetchLowStockProductsApi = async (
+  userId: string,
+  threshold: number = 2,
+  page: number = 1,
+  itemsPerPage: number = 10
+) => {
+  try {
+    const url = `${API_BASE_URL}/api.php?_d=NtSeProductsApi&user_id=${userId}&status=A&amount_to=${threshold}&page=${page}&items_per_page=${itemsPerPage}`;
+
+    console.log("Fetching low stock products from URL:", url);
+
+    const response = await axios({
+      method: "GET",
+      url: url,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: API_AUTH_HEADER,
+      },
+      data: {
+        user_login: "csctest@gmail.com",
+        password: "Zaid@123",
+      },
+    });
+
+    return response.data as ProductsResponse;
+  } catch (error) {
+    console.error("Fetch Low Stock Products API error:", error);
     throw error;
   }
 };
@@ -277,20 +388,54 @@ export const fetchProductDetailsApi = async (
   }
 };
 
+// Update existing searchProductsApi to include filters
 export const searchProductsApi = async (
   userId: string,
   searchTerm: string,
-  page: number = 1
+  filters: ProductFilters = {}
 ) => {
   try {
-    const response = await apiClient.get(`/api.php`, {
-      params: {
-        _d: "NtSeProductsApi",
-        user_id: userId,
-        search: searchTerm,
-        page,
+    const {
+      status = "all",
+      lowStock = false,
+      lowStockThreshold = 2,
+      page = 1,
+      itemsPerPage = 10,
+    } = filters;
+
+    // Build the URL with query parameters
+    let url = `${API_BASE_URL}/api.php?_d=NtSeProductsApi&user_id=${userId}&search=${encodeURIComponent(
+      searchTerm
+    )}`;
+
+    // Add status filter if not 'all'
+    if (status !== "all") {
+      url += `&status=${status}`;
+    }
+
+    // Add low stock filter
+    if (lowStock) {
+      url += `&status=A&amount_to=${lowStockThreshold}`;
+    }
+
+    // Add pagination parameters
+    url += `&page=${page}&items_per_page=${itemsPerPage}`;
+
+    console.log("Searching products from URL:", url);
+
+    const response = await axios({
+      method: "GET",
+      url: url,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: API_AUTH_HEADER,
+      },
+      data: {
+        user_login: "csctest@gmail.com",
+        password: "Zaid@123",
       },
     });
+
     return response.data as ProductsResponse;
   } catch (error) {
     console.error("Search Products API error:", error);
@@ -407,3 +552,36 @@ export const searchOrdersApi = async (
 };
 
 export default apiClient;
+
+export const updateProductStatusApi = async (
+  userId: string,
+  productId: string,
+  status: "A" | "P" | "D"
+) => {
+  try {
+    const response = await apiClient.post(`/api.php`, {
+      _d: "NtSeProductsApi",
+      user_id: userId,
+      product_id: productId,
+      status: status,
+      user_login: "csctest@gmail.com",
+      password: "Zaid@123",
+    });
+
+    console.log("Update product status response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Update Product Status API error:", error);
+    throw error;
+  }
+};
+
+// Product Toggle Status Helper
+export const toggleProductStatusApi = async (
+  userId: string,
+  productId: string,
+  isActive: boolean
+) => {
+  const status = isActive ? "A" : "D"; // A = Active, D = Disabled/Hidden
+  return await updateProductStatusApi(userId, productId, status);
+};

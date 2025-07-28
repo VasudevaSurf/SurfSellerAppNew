@@ -5,6 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
   View,
+  RefreshControl,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
@@ -30,49 +32,207 @@ import { TypographyVariant } from "../../../components/UserComponents/Typography
 import { ColorPalette } from "../../../config/colorPalette";
 import { getScreenHeight, getScreenWidth } from "../../../helpers/screenSize";
 import { navigate } from "../../../navigation/utils/navigationRef";
-import { fetchProducts } from "../../../redux/slices/productsSlice";
+import {
+  fetchProducts,
+  fetchProductsByStatus,
+  fetchLowStockProducts,
+  searchProducts,
+  fetchFilterCounts,
+  setCurrentFilter,
+  setSearchTerm,
+  updateProductStatus,
+} from "../../../redux/slices/productsSlice";
 import { AppDispatch, RootState } from "../../../redux/store";
 import { styles } from "./ProductScreen.styles";
 
 const ProductScreen = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const [searchText] = useState();
+  const [searchText, setSearchText] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   const userId = useSelector(
     (state: RootState) => state.auth.userData?.user_id
   );
-
-  console.log("User ID for Products:", userId);
 
   const {
     products = [],
     loading,
     error,
     totalItems,
+    currentFilter,
+    filterCounts,
+    searchTerm,
   } = useSelector((state: RootState) => state.products);
 
-  // Log all product IDs in the console
+  console.log("ProductScreen - User ID:", userId);
+  console.log("ProductScreen - Current state:", {
+    productsCount: products.length,
+    loading,
+    error,
+    totalItems,
+    currentFilter,
+    filterCounts,
+    searchTerm,
+  });
+
+  // Create filter options with dynamic counts
+  const filterOptions = [
+    {
+      id: "all",
+      label: `All${filterCounts.all > 0 ? ` ${filterCounts.all}` : ""}`,
+    },
+    {
+      id: "active",
+      label: `Active${
+        filterCounts.active > 0 ? ` ${filterCounts.active}` : ""
+      }`,
+    },
+    {
+      id: "lowStock",
+      label: `Low Stock${
+        filterCounts.lowStock > 0 ? ` ${filterCounts.lowStock}` : ""
+      }`,
+    },
+    {
+      id: "pending",
+      label: `Pending${
+        filterCounts.pending > 0 ? ` ${filterCounts.pending}` : ""
+      }`,
+    },
+    {
+      id: "disabled",
+      label: `Hidden${
+        filterCounts.disabled > 0 ? ` ${filterCounts.disabled}` : ""
+      }`,
+    },
+  ];
+
+  const [selectedFilter, setSelectedFilter] = useState(
+    filterOptions.find((option) => option.id === currentFilter) ||
+      filterOptions[0]
+  );
+
+  // Update selected filter when currentFilter changes
   useEffect(() => {
-    if (products && products.length > 0) {
-      console.log(
-        "Product IDs available:",
-        products.map((product) => product.product_id)
+    const newSelectedFilter = filterOptions.find(
+      (option) => option.id === currentFilter
+    );
+    if (newSelectedFilter) {
+      setSelectedFilter(newSelectedFilter);
+    }
+  }, [currentFilter, filterCounts]);
+
+  // Function to fetch products based on current filter
+  const fetchProductsForFilter = (filterId: string, search: string = "") => {
+    if (!userId) return;
+
+    console.log(
+      `Fetching products for filter: ${filterId}, search: "${search}"`
+    );
+
+    if (search.trim()) {
+      // If there's a search term, use search API with filter
+      const statusMap: { [key: string]: "A" | "P" | "D" | "all" } = {
+        all: "all",
+        active: "A",
+        pending: "P",
+        disabled: "D",
+        lowStock: "A", // Low stock is subset of active
+      };
+
+      dispatch(
+        searchProducts({
+          userId,
+          searchTerm: search,
+          filters: {
+            status: statusMap[filterId] || "all",
+            lowStock: filterId === "lowStock",
+            page: 1,
+          },
+        })
       );
     } else {
-      console.log("No product IDs available");
+      // No search term, use appropriate filter API
+      switch (filterId) {
+        case "active":
+          dispatch(fetchProductsByStatus({ userId, status: "A" }));
+          break;
+        case "pending":
+          dispatch(fetchProductsByStatus({ userId, status: "P" }));
+          break;
+        case "disabled":
+          dispatch(fetchProductsByStatus({ userId, status: "D" }));
+          break;
+        case "lowStock":
+          dispatch(fetchLowStockProducts({ userId, threshold: 2 }));
+          break;
+        case "all":
+        default:
+          dispatch(fetchProducts({ userId, filters: { status: "all" } }));
+          break;
+      }
     }
-  }, [products]);
+  };
 
+  // Fetch filter counts on component mount
   useEffect(() => {
     if (userId) {
-      dispatch(fetchProducts({ userId })).catch((err) => {
-        console.log("Failed to fetch products:", err);
-      });
+      console.log("Fetching filter counts for userId:", userId);
+      dispatch(fetchFilterCounts({ userId }));
     }
   }, [dispatch, userId]);
 
+  // Initial load
+  useEffect(() => {
+    if (userId && products.length === 0 && !loading && !error) {
+      console.log("Initial products load");
+      fetchProductsForFilter("all");
+    }
+  }, [userId]);
+
+  // Handle filter selection
+  const handleFilterSelect = (option: any) => {
+    console.log("Filter selected:", option);
+    setSelectedFilter(option);
+    dispatch(setCurrentFilter(option.id));
+    fetchProductsForFilter(option.id, searchText);
+  };
+
+  // Handle search with debouncing
+  const handleSearch = (text: string) => {
+    console.log("Search text changed:", text);
+    setSearchText(text);
+    dispatch(setSearchTerm(text));
+
+    // Simple debouncing
+    setTimeout(() => {
+      fetchProductsForFilter(selectedFilter.id, text);
+    }, 300);
+  };
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    console.log("Refresh triggered");
+    setIsRefreshing(true);
+    try {
+      if (userId) {
+        // Refresh both products and filter counts
+        await Promise.all([
+          dispatch(fetchFilterCounts({ userId })),
+          fetchProductsForFilter(selectedFilter.id, searchText),
+        ]);
+      }
+    } catch (error) {
+      console.error("Refresh failed:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleAddManually = () => {
+    console.log("Add manually pressed");
     setShowAddModal(false);
     setTimeout(() => {
       navigate("Dashboard", {
@@ -83,8 +243,8 @@ const ProductScreen = () => {
   };
 
   const handleUploadCsv = () => {
-    setShowAddModal(false);
     console.log("Upload CSV pressed");
+    setShowAddModal(false);
   };
 
   const buttons: ButtonConfig[] = [
@@ -94,6 +254,7 @@ const ProductScreen = () => {
       variant: ButtonVariant.PRIMARY,
       state: ButtonState.DEFAULT,
       size: ButtonSize.MEDIUM,
+      textVariant: TypographyVariant.LMEDIUM_EXTRASEMIBOLD,
     },
     {
       text: "Add product Manually",
@@ -103,29 +264,113 @@ const ProductScreen = () => {
       type: ButtonType.OUTLINED,
       size: ButtonSize.MEDIUM,
       customStyles: { borderWidth: 1 },
+      textVariant: TypographyVariant.LMEDIUM_EXTRASEMIBOLD,
     },
   ];
 
-  const filterOptions = [
-    { id: "all", label: `All ${products.length}` },
-    { id: "active", label: "Active" },
-    { id: "lowStock", label: "Low in Stock" },
-    { id: "hidden", label: "Hidden" },
-    { id: "outOfStock", label: "Out of Stock" },
-    { id: "pending", label: "Pending" },
-    { id: "discontinued", label: "Discontinued" },
-    { id: "draft", label: "Draft" },
-  ];
-
-  const [selectedFilter, setSelectedFilter] = useState(filterOptions[0]);
-
   const searchBarHeight = getScreenHeight(6);
 
-  const handleToggleProductStatus = (productId, isActive) => {
-    console.log(
-      `Product ${productId} status changed to ${isActive ? "Active" : "Hidden"}`
-    );
-    // Here you would implement the actual status change logic
+  // Enhanced toggle status function
+  const handleToggleProductStatus = async (
+    productId: string,
+    isActive: boolean
+  ) => {
+    if (!userId) {
+      console.error("No userId available for status update");
+      Alert.alert(
+        "Error",
+        "Unable to update product status. Please try again."
+      );
+      return;
+    }
+
+    console.log("Toggling product status:", { productId, isActive, userId });
+
+    // Prevent multiple simultaneous updates
+    if (updatingStatus === productId) {
+      console.log("Status update already in progress for product:", productId);
+      return;
+    }
+
+    setUpdatingStatus(productId);
+
+    try {
+      // Update local state immediately for better UX
+      dispatch(
+        updateProductStatus({
+          productId,
+          status: isActive ? "A" : "D",
+        })
+      );
+
+      // TODO: Add actual API call here
+      // await toggleProductStatusApi(userId, productId, isActive);
+
+      console.log(
+        `Product ${productId} status successfully updated to ${
+          isActive ? "Active" : "Hidden"
+        }`
+      );
+
+      // Refresh filter counts after status change
+      setTimeout(() => {
+        if (userId) {
+          dispatch(fetchFilterCounts({ userId }));
+        }
+      }, 500);
+    } catch (error) {
+      console.error("Failed to update product status:", error);
+
+      // Revert local state change on error
+      dispatch(
+        updateProductStatus({
+          productId,
+          status: isActive ? "D" : "A", // Revert to previous state
+        })
+      );
+
+      Alert.alert(
+        "Update Failed",
+        "Failed to update product status. Please try again.",
+        [
+          {
+            text: "OK",
+            style: "default",
+          },
+          {
+            text: "Retry",
+            onPress: () => handleToggleProductStatus(productId, isActive),
+            style: "default",
+          },
+        ]
+      );
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  const getEmptyStateMessage = () => {
+    if (searchText.trim()) {
+      return `No products found for "${searchText}"`;
+    }
+
+    switch (selectedFilter.id) {
+      case "active":
+        return "No active products found";
+      case "pending":
+        return "No pending products found";
+      case "disabled":
+        return "No hidden products found";
+      case "lowStock":
+        return "No low stock products found";
+      case "all":
+      default:
+        return "No products found";
+    }
+  };
+
+  const getEmptyStateAction = () => {
+    return selectedFilter.id === "all" && !searchText.trim();
   };
 
   return (
@@ -155,7 +400,7 @@ const ProductScreen = () => {
       <View style={styles.searchContainer}>
         <SearchBox
           value={searchText}
-          onChangeText={() => {}} // Placeholder for future implementation
+          onChangeText={handleSearch}
           placeholder="Search products..."
           customContainerStyle={{
             flex: 1,
@@ -186,24 +431,40 @@ const ProductScreen = () => {
         <SlidingBar
           options={filterOptions}
           selectedOption={selectedFilter}
-          onOptionSelect={setSelectedFilter}
+          onOptionSelect={handleFilterSelect}
         />
       </View>
 
-      {loading ? (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size="large" color={ColorPalette.Primary} />
+      {loading && !isRefreshing ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={ColorPalette.PURPLE_300} />
+          <Typography
+            text="Loading products..."
+            variant={TypographyVariant.LMEDIUM_REGULAR}
+            customTextStyles={{
+              color: ColorPalette.GREY_TEXT_300,
+              marginTop: getScreenHeight(1),
+            }}
+          />
         </View>
       ) : error ? (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
+        <View style={styles.errorContainer}>
           <Typography
             text={error}
             variant={TypographyVariant.LMEDIUM_REGULAR}
-            customTextStyles={{ color: ColorPalette.RED_100 }}
+            customTextStyles={{
+              color: ColorPalette.RED_100,
+              textAlign: "center",
+              marginBottom: getScreenHeight(2),
+            }}
+          />
+          <Button
+            text="Retry"
+            variant={ButtonVariant.PRIMARY}
+            state={ButtonState.DEFAULT}
+            size={ButtonSize.MEDIUM}
+            onPress={handleRefresh}
+            customStyles={styles.retryButton}
           />
         </View>
       ) : (
@@ -214,42 +475,58 @@ const ProductScreen = () => {
             { paddingBottom: getScreenHeight(4) },
           ]}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[ColorPalette.PURPLE_300]}
+              tintColor={ColorPalette.PURPLE_300}
+            />
+          }
         >
           <View style={styles.ProductContainer}>
             {products && products.length > 0 ? (
-              products.map((product) => (
-                <ProductInfo
-                  key={product.product_id}
-                  productId={product.product_id} // Make sure this is correctly passed
-                  orderImage={product.image_url}
-                  productName={product.product}
-                  sellerPrice={product.format_price}
-                  platformFee="€0.00"
-                  stock={product.amount.toString()}
-                  active={product.status === "A"}
-                  onActiveChange={(isActive) =>
-                    handleToggleProductStatus(product.product_id, isActive)
-                  }
-                  onShare={() => console.log(`Share ${product.product}`)}
-                  onMoreOptions={() =>
-                    console.log(`More options for ${product.product}`)
-                  }
-                />
-              ))
+              products.map((product) => {
+                const isUpdatingThisProduct =
+                  updatingStatus === product.product_id;
+
+                return (
+                  <ProductInfo
+                    key={product.product_id}
+                    productId={product.product_id}
+                    orderImage={product.image_url}
+                    productName={product.product}
+                    sellerPrice={product.format_price}
+                    platformFee="€0.00"
+                    stock={product.amount.toString()}
+                    active={product.status === "A"}
+                    onActiveChange={(isActive) =>
+                      handleToggleProductStatus(product.product_id, isActive)
+                    }
+                    onShare={() => console.log(`Share ${product.product}`)}
+                    onMoreOptions={() =>
+                      console.log(`More options for ${product.product}`)
+                    }
+                    style={isUpdatingThisProduct ? { opacity: 0.7 } : undefined}
+                  />
+                );
+              })
             ) : (
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  padding: 20,
-                }}
-              >
+              <View style={styles.emptyStateContainer}>
                 <Typography
-                  text="No products found"
+                  text={getEmptyStateMessage()}
                   variant={TypographyVariant.LMEDIUM_REGULAR}
-                  customTextStyles={{ color: ColorPalette.AgreeTerms }}
+                  customTextStyles={styles.emptyStateText}
                 />
+                {getEmptyStateAction() && (
+                  <Button
+                    text="Add Your First Product"
+                    variant={ButtonVariant.PRIMARY}
+                    state={ButtonState.DEFAULT}
+                    size={ButtonSize.MEDIUM}
+                    onPress={() => setShowAddModal(true)}
+                  />
+                )}
               </View>
             )}
           </View>
@@ -265,6 +542,7 @@ const ProductScreen = () => {
       <TouchableOpacity
         style={styles.floatingButton}
         onPress={() => setShowAddModal(true)}
+        activeOpacity={0.8}
       >
         <PlusIcon
           size={24}
