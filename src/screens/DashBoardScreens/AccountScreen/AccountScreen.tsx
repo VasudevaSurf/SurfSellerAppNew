@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { Image, ScrollView, View } from "react-native";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
+import { Image, ScrollView, View, Linking, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import ArrowRightIcon from "../../../../assets/icons/ArrowRightIcon";
@@ -25,32 +25,79 @@ import {
   navigateToAuth,
 } from "../../../navigation/utils/navigationRef";
 import { logoutUser } from "../../../redux/slices/authSlice";
+import { fetchProfile } from "../../../redux/slices/profileSlice";
+import { fetchInitializer } from "../../../redux/slices/initializerSlice";
+import { useAppConfig } from "../../../hooks/useAppConfig";
 import { styles } from "./AccountScreen.styles";
-import { RootState } from "../../../redux/store";
+import { RootState, AppDispatch } from "../../../redux/store";
 
 const AccountScreen = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const userData = useSelector((state: RootState) => state.auth.userData);
+  const { profileData, loading: profileLoading } = useSelector(
+    (state: RootState) => state.profile
+  );
 
-  const fullName = userData
-    ? `${userData.firstname || ""} ${userData.lastname || ""}`.trim()
+  // Use the app config hook (URLs are now cleaned)
+  const {
+    termsUrl,
+    privacyUrl,
+    whatsappUrl,
+    isCompanyProfileEnabled,
+    loading: configLoading,
+  } = useAppConfig();
+
+  // Use profile data if available, fallback to auth userData
+  const currentUserData = profileData || userData;
+
+  const fullName = currentUserData
+    ? `${currentUserData.firstname || ""} ${
+        currentUserData.lastname || ""
+      }`.trim()
     : "User Profile";
+
+  // Fetch profile data and app config when component mounts
+  useEffect(() => {
+    if (userData?.user_id) {
+      dispatch(fetchProfile(userData.user_id));
+    }
+    dispatch(fetchInitializer());
+  }, [dispatch, userData?.user_id]);
 
   // Handle logout functionality
   const handleLogout = useCallback(async () => {
     try {
       await dispatch(logoutUser());
-
       setShowLogoutModal(false);
-
       navigateToAuth();
     } catch (error) {
       console.error("Logout failed:", error);
       setShowLogoutModal(false);
     }
   }, [dispatch]);
+
+  // Helper function to open URL with error handling
+  const openUrl = useCallback(async (url: string, fallbackMessage: string) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(
+          "Error",
+          `Cannot open ${fallbackMessage}. Please try again later.`
+        );
+      }
+    } catch (error) {
+      console.error(`Error opening ${fallbackMessage}:`, error);
+      Alert.alert(
+        "Error",
+        `Failed to open ${fallbackMessage}. Please try again later.`
+      );
+    }
+  }, []);
 
   const headerIcons = useMemo(
     () => [
@@ -63,14 +110,53 @@ const AccountScreen = () => {
       },
       {
         icon: QuestionMarkIcon,
-        onPress: () => console.log("Question mark pressed"),
+        onPress: () => {
+          if (whatsappUrl) {
+            openUrl(whatsappUrl, "WhatsApp support");
+          }
+        },
         size: 24,
         color: ColorPalette.Black,
         strokeWidth: 2,
       },
     ],
-    []
+    [whatsappUrl, openUrl]
   );
+
+  // Handle Terms and Conditions navigation - Open in browser
+  // const handleTermsPress = useCallback(() => {
+  //   if (termsUrl) {
+  //     console.log("Opening Terms URL:", termsUrl); // Debug log
+  //     openUrl(termsUrl, "Terms and Conditions");
+  //   } else {
+  //     Alert.alert("Error", "Terms and Conditions not available at the moment.");
+  //   }
+  // }, [termsUrl, openUrl]);
+
+  // Handle Privacy Policy navigation - Open in browser
+  // const handlePrivacyPress = useCallback(() => {
+  //   if (privacyUrl) {
+  //     console.log("Opening Privacy URL:", privacyUrl); // Debug log
+  //     openUrl(privacyUrl, "Privacy Policy");
+  //   } else {
+  //     Alert.alert("Error", "Privacy Policy not available at the moment.");
+  //   }
+  // }, [privacyUrl, openUrl]);
+
+  const handleTermsPress = useCallback(() => {
+    navigate("Dashboard", {
+      screen: "Account",
+      params: { screen: "TermsAndConditions" },
+    });
+  }, []);
+
+  // Handle Privacy Policy navigation - Navigate to internal screen
+  const handlePrivacyPress = useCallback(() => {
+    navigate("Dashboard", {
+      screen: "Account",
+      params: { screen: "PrivacyPolicy" },
+    });
+  }, []);
 
   // Memoize modal buttons with updated logout functionality
   const logoutButtons = useMemo(
@@ -126,11 +212,10 @@ const AccountScreen = () => {
   );
 
   // Memoize menu items configuration
-  const menuItems = useMemo(
-    () => [
+  const menuItems = useMemo(() => {
+    const items = [
       {
         label: "Personal Info",
-        // leftIcon: <ProfileIcon style={undefined} />,
         rightIcon: <ArrowRightIcon style={undefined} />,
         onPress: () => {
           navigate("Dashboard", {
@@ -138,10 +223,10 @@ const AccountScreen = () => {
             params: { screen: "PersonalInfo" },
           });
         },
+        show: true,
       },
       {
         label: "Company Profile",
-        // leftIcon: <CompanyProfile style={undefined} />,
         rightIcon: <ArrowRightIcon style={undefined} />,
         onPress: () => {
           navigate("Dashboard", {
@@ -149,10 +234,10 @@ const AccountScreen = () => {
             params: { screen: "CompanyProfile" },
           });
         },
+        show: isCompanyProfileEnabled,
       },
       {
         label: "Bank Details",
-        // leftIcon: <BankIcon style={undefined} />,
         rightIcon: <ArrowRightIcon style={undefined} />,
         onPress: () => {
           navigate("Dashboard", {
@@ -160,10 +245,10 @@ const AccountScreen = () => {
             params: { screen: "BankDetails" },
           });
         },
+        show: true,
       },
       {
         label: "Payments",
-        // leftIcon: <PaymentIcon style={undefined} />,
         rightIcon: <ArrowRightIcon style={undefined} />,
         onPress: () => {
           navigate("Dashboard", {
@@ -171,16 +256,16 @@ const AccountScreen = () => {
             params: { screen: "PaymentInfo" },
           });
         },
+        show: true,
       },
       {
         label: "Strip Account",
-        // leftIcon: <StripIcon style={undefined} />,
         rightIcon: <ArrowRightIcon style={undefined} />,
         onPress: () => {},
+        show: true,
       },
       {
         label: "Notifications",
-        // leftIcon: <NotificationIcon style={undefined} />,
         rightIcon: <ArrowRightIcon style={undefined} />,
         onPress: () => {
           navigate("Dashboard", {
@@ -188,16 +273,17 @@ const AccountScreen = () => {
             params: { screen: "NotificationScreen" },
           });
         },
+        show: true,
       },
       {
         label: "Terms and Conditions",
-        // leftIcon: <TermsIcon style={undefined} />,
         rightIcon: <ArrowRightIcon style={undefined} />,
-        onPress: () => {},
+        onPress: handleTermsPress,
+        // show: !!termsUrl,
+        show: true,
       },
       {
         label: `FAQ'S`,
-        // leftIcon: <TermsIcon style={undefined} />,
         rightIcon: <ArrowRightIcon style={undefined} />,
         onPress: () => {
           navigate("Dashboard", {
@@ -205,28 +291,38 @@ const AccountScreen = () => {
             params: { screen: "FAQScreen" },
           });
         },
+        show: true,
       },
       {
         label: "Privacy Policy",
-        // leftIcon: <PolicyIcon style={undefined} />,
         rightIcon: <ArrowRightIcon style={undefined} />,
-        onPress: () => {},
+        onPress: handlePrivacyPress,
+        // show: !!privacyUrl,
+        show: true,
       },
       {
         label: "Logout",
-        // leftIcon: <LogOutIcon style={undefined} />,
         rightIcon: null,
         onPress: () => setShowLogoutModal(true),
+        show: true,
       },
       {
         label: "Delete Account",
-        // leftIcon: <DeleteIcon style={undefined} />,
         rightIcon: null,
         onPress: () => setShowDeleteModal(true),
+        show: true,
       },
-    ],
-    []
-  );
+    ];
+
+    // Filter out items that shouldn't be shown
+    return items.filter((item) => item.show);
+  }, [
+    isCompanyProfileEnabled,
+    // termsUrl,
+    // privacyUrl,
+    handleTermsPress,
+    handlePrivacyPress,
+  ]);
 
   // Memoize the profile section
   const ProfileSection = useCallback(
@@ -255,7 +351,7 @@ const AccountScreen = () => {
         </View>
       </View>
     ),
-    []
+    [fullName]
   );
 
   // Memoize the sales section

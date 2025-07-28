@@ -4,6 +4,8 @@ import productsReducer from "./slices/productsSlice";
 import productDetailsReducer from "./slices/productDetailsSlice";
 import ordersReducer from "./slices/ordersSlice";
 import orderDetailsReducer from "./slices/orderDetailsSlice";
+import profileReducer from "./slices/profileSlice";
+import initializerReducer from "./slices/initializerSlice"; // Add this import
 
 const store = configureStore({
   reducer: {
@@ -12,6 +14,8 @@ const store = configureStore({
     productDetails: productDetailsReducer,
     orders: ordersReducer,
     orderDetails: orderDetailsReducer,
+    profile: profileReducer,
+    initializer: initializerReducer, // Add this reducer
   },
 });
 

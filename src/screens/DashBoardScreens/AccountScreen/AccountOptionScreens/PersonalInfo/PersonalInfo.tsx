@@ -1,6 +1,7 @@
 import { useFocusEffect, useRoute } from "@react-navigation/native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SafeAreaView, ScrollView, View } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import ArrowLeftIcon from "../../../../../../assets/icons/ArrowLeftIcon";
 import { Header } from "../../../../../components/UserComponents/Header/Header";
 import AnimatedTextInput from "../../../../../components/UserComponents/TextInput/TextInput";
@@ -11,8 +12,10 @@ import {
   goBack,
   navigate,
 } from "../../../../../navigation/utils/navigationRef";
+import { updateProfile } from "../../../../../redux/slices/profileSlice";
 import { styles } from "./PerosanlInfo.styles";
 import ArrowLeft from "../../../../../../assets/icons/ArrowLeft";
+import { RootState, AppDispatch } from "../../../../../redux/store";
 
 const INITIAL_COUNTRY_CODE = "+356";
 const MALTA_FLAG_URL =
@@ -20,20 +23,81 @@ const MALTA_FLAG_URL =
 
 const PersonalInfo = () => {
   const route = useRoute();
-  const [fullName, setFullName] = useState("Annie Flora");
-  const [email, setEmail] = useState("anniesshop@gmail.com");
+  const dispatch = useDispatch<AppDispatch>();
+  const userData = useSelector((state: RootState) => state.auth.userData);
+  const { profileData, loading, updating } = useSelector(
+    (state: RootState) => state.profile
+  );
+
+  const currentUserData = profileData || userData;
+
+  const [fullName, setFullName] = useState("Full Name");
+  const [email, setEmail] = useState("email@gmail.com");
   const [phoneNumber, setPhoneNumber] = useState("9864 1234");
   const [countryCode, setCountryCode] = useState(INITIAL_COUNTRY_CODE);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  useEffect(() => {
+    if (currentUserData && !isDataLoaded) {
+      const firstName = currentUserData.firstname || "";
+      const lastName = currentUserData.lastname || "";
+      const fullNameFromData = `${firstName} ${lastName}`.trim();
+
+      if (fullNameFromData && fullNameFromData !== " ") {
+        setFullName(fullNameFromData);
+      }
+      if (currentUserData.email) {
+        setEmail(currentUserData.email);
+      }
+      if (currentUserData.phone) {
+        setPhoneNumber(currentUserData.phone);
+      }
+
+      setIsDataLoaded(true);
+    }
+  }, [currentUserData, isDataLoaded]);
 
   useFocusEffect(
     React.useCallback(() => {
       if (route.params) {
         const { updatedName, updatedEmail, updatedPhone } = route.params;
-        if (updatedName) setFullName(updatedName);
-        if (updatedEmail) setEmail(updatedEmail);
-        if (updatedPhone) setPhoneNumber(updatedPhone);
+        if (updatedName) {
+          setFullName(updatedName);
+          const [firstName, ...lastNameParts] = updatedName.split(" ");
+          const lastName = lastNameParts.join(" ");
+          if (userData?.user_id) {
+            dispatch(
+              updateProfile({
+                userId: userData.user_id,
+                profileData: { firstname: firstName, lastname: lastName },
+              })
+            );
+          }
+        }
+        if (updatedEmail) {
+          setEmail(updatedEmail);
+          if (userData?.user_id) {
+            dispatch(
+              updateProfile({
+                userId: userData.user_id,
+                profileData: { email: updatedEmail },
+              })
+            );
+          }
+        }
+        if (updatedPhone) {
+          setPhoneNumber(updatedPhone);
+          if (userData?.user_id) {
+            dispatch(
+              updateProfile({
+                userId: userData.user_id,
+                profileData: { phone: updatedPhone },
+              })
+            );
+          }
+        }
       }
-    }, [route.params])
+    }, [route.params, dispatch, userData?.user_id])
   );
 
   const handleEditName = () => {
@@ -146,6 +210,8 @@ const PersonalInfo = () => {
             customBorderColor={ColorPalette.GREY_TEXT_400}
             customBorderWidth={1}
             disabled={true}
+            // Force the label to be in the correct position
+            placeholder=""
           />
           <AnimatedTextInput
             label="Email ID"
@@ -159,6 +225,7 @@ const PersonalInfo = () => {
             customBorderColor={ColorPalette.GREY_TEXT_400}
             customBorderWidth={1}
             disabled={true}
+            placeholder=""
           />
           <AnimatedTextInput
             label="WhatsApp number"
@@ -176,6 +243,7 @@ const PersonalInfo = () => {
             customBorderColor={ColorPalette.GREY_TEXT_400}
             customBorderWidth={1}
             disabled={true}
+            placeholder=""
           />
         </View>
       </ScrollView>

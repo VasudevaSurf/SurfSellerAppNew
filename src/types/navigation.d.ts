@@ -55,6 +55,8 @@ export type AccountSettingsStackParamList = {
   NotificationScreen: undefined;
   FAQScreen: undefined;
   ChatScreen: undefined;
+  TermsAndConditions: undefined;
+  PrivacyPolicy: undefined;
 };
 
 export type OrderNavigator = {

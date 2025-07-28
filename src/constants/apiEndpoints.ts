@@ -10,4 +10,11 @@ export const API_ENDPOINTS = {
     LIST: "/api.php?_d=NtSeOrdersApi",
     DETAIL: "/api.php?_d=NtSeOrdersApi",
   },
+  PROFILE: {
+    GET: "/api.php?_d=NtSeProfilesApi",
+    UPDATE: "/api.php?_d=NtSeProfilesApi",
+  },
+  INITIALIZER: {
+    GET: "/api.php?_d=NtSeInitializerApi",
+  },
 };

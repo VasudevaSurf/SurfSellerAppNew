@@ -57,6 +57,130 @@ export interface OrderDetailsResponse {
   order_data: Order;
 }
 
+export interface ProfileField {
+  name: string;
+  field_name: string;
+  main_object: string;
+  field_type: string;
+  field_type_desc: string;
+  field_disabled: boolean;
+  value: string;
+  required: boolean;
+  variants: any;
+}
+
+export interface ProfileBlock {
+  block_name: string;
+  fields: ProfileField[];
+}
+
+export interface ProfileSection {
+  name: string;
+  section_type: string;
+  selected: boolean;
+  blocks: ProfileBlock[];
+}
+
+export interface ProfileResponse {
+  sections: ProfileSection[];
+  message: string;
+  result: boolean;
+}
+
+export interface UserProfile {
+  email: string;
+  firstname: string;
+  lastname: string;
+  phone: string;
+  password?: string;
+}
+
+export interface Language {
+  lang_id: string;
+  lang_code: string;
+  name: string;
+  country_code: string;
+  direction: string;
+}
+
+export interface ApplicationConfig {
+  is_signup_allowed: boolean;
+  is_setting_enable: boolean;
+  is_booking_enable: boolean;
+  is_auction_enable: boolean;
+  is_change_language_enable: boolean;
+  is_change_storefront_enable: boolean;
+  is_seller_promotion_enable: boolean;
+  is_wallet_enable: boolean;
+  is_blog_enable: boolean;
+  is_dark_mode_enable: boolean;
+  is_dark_mode: boolean;
+  is_biomatric_enable: boolean;
+  is_youtube_enable: boolean;
+  is_product_filter_enable: boolean;
+  is_order_filter_enable: boolean;
+  is_chat_enable: boolean;
+  is_order_enable: boolean;
+  is_product_enable: boolean;
+  is_dashboard: boolean;
+  is_langauge_enable: boolean;
+  is_forgot_password_enable: boolean;
+  is_block_enable: boolean;
+  is_chat_archive_enable: boolean;
+  is_chat_attachment_enable: boolean;
+  is_chat_delete_enable: boolean;
+  is_company_profile_enable: boolean;
+}
+
+export interface PlatformFee {
+  min: string;
+  max: string;
+  fee: string;
+}
+
+export interface AppUpdateConfig {
+  is_app_update_required: boolean;
+  android_version: string;
+  ios_version: string;
+  android_url: string;
+  ios_url: string;
+}
+
+export interface Storefront {
+  // Define storefront structure if needed
+  id?: string;
+  name?: string;
+  // Add other properties as needed
+}
+
+export interface InitializerResponse {
+  languages: Language[];
+  application_config: ApplicationConfig;
+  storefronts: Storefront[];
+  privacy_policy_page: string;
+  terms_of_use_page: string;
+  whatsapp_url: string;
+  platform_fee: PlatformFee[];
+  app_update_config: AppUpdateConfig;
+  default_language: string;
+  message: string;
+  result: boolean;
+}
+
+export const fetchInitializerApi = async () => {
+  try {
+    const response = await apiClient.get(`/api.php`, {
+      params: {
+        _d: "NtSeInitializerApi",
+      },
+    });
+    return response.data as InitializerResponse;
+  } catch (error) {
+    console.error("Fetch Initializer API error:", error);
+    throw error;
+  }
+};
+
 // Create the API client with the correct base URL and authorization
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -75,6 +199,38 @@ export const loginApi = async (email: string, password: string) => {
     return response.data;
   } catch (error) {
     console.error("Login API error:", error);
+    throw error;
+  }
+};
+
+export const fetchProfileApi = async (userId: string) => {
+  try {
+    const response = await apiClient.get(`/api.php`, {
+      params: {
+        _d: "NtSeProfilesApi",
+        user_id: userId,
+      },
+    });
+    return response.data as ProfileResponse;
+  } catch (error) {
+    console.error("Fetch Profile API error:", error);
+    throw error;
+  }
+};
+
+export const updateProfileApi = async (
+  userId: string,
+  profileData: Partial<UserProfile>
+) => {
+  try {
+    const response = await apiClient.post(`/api.php`, {
+      _d: "NtSeProfilesApi",
+      user_id: userId,
+      user_data: profileData,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Update Profile API error:", error);
     throw error;
   }
 };

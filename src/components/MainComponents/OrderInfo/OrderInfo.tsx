@@ -158,7 +158,7 @@ export const OrderInfo: React.FC<OrderInfoProps> = ({
               customTextStyles={{ color: ColorPalette.GREY_TEXT_100 }}
             />
             <Typography
-              text={`€${orderPrice}`}
+              text={`${orderPrice}`}
               variant={TypographyVariant.LMEDIUM_BOLD}
               customTextStyles={styles.priceText}
             />
