@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Image,
@@ -7,16 +7,16 @@ import {
   TextInput as RNTextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import ArrowDownIcon from '../../../../assets/icons/ArrowDownIcon';
-import {ColorPalette} from '../../../config/colorPalette';
-import {Spacing} from '../../../config/globalStyles';
-import {getScreenHeight} from '../../../helpers/screenSize';
-import {Typography} from '../Typography/Typography';
-import {TypographyVariant} from '../Typography/Typography.types';
-import {createStyles} from './TextInput.styles';
-import {TextInputProps} from './TextInput.types';
-import {validateInput} from './TextInput.utils';
+} from "react-native";
+import ArrowDownIcon from "../../../../assets/icons/ArrowDownIcon";
+import { ColorPalette } from "../../../config/colorPalette";
+import { Spacing } from "../../../config/globalStyles";
+import { getScreenHeight } from "../../../helpers/screenSize";
+import { Typography } from "../Typography/Typography";
+import { TypographyVariant } from "../Typography/Typography.types";
+import { createStyles } from "./TextInput.styles";
+import { TextInputProps } from "./TextInput.types";
+import { validateInput } from "./TextInput.utils";
 
 // Add these imports at the top of your file
 // You can replace these with your actual eye icons
@@ -25,9 +25,10 @@ const EyeOpenIcon = () => (
     style={{
       width: 24,
       height: 24,
-      justifyContent: 'center',
-      alignItems: 'center',
-    }}>
+      justifyContent: "center",
+      alignItems: "center",
+    }}
+  >
     <Typography variant={TypographyVariant.PSMALL_REGULAR} text="👁️" />
   </View>
 );
@@ -37,9 +38,10 @@ const EyeCloseIcon = () => (
     style={{
       width: 24,
       height: 24,
-      justifyContent: 'center',
-      alignItems: 'center',
-    }}>
+      justifyContent: "center",
+      alignItems: "center",
+    }}
+  >
     <Typography variant={TypographyVariant.PSMALL_REGULAR} text="👁️‍🗨️" />
   </View>
 );
@@ -50,7 +52,7 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
   onChangeText,
   placeholder,
   autoFocus = false,
-  autoCapitalize = 'none',
+  autoCapitalize = "none",
   customContainerStyles,
   customInputStyles,
   customPlaceholderStyles,
@@ -59,7 +61,7 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
   customLabelColorUnfocused,
   error,
   secureTextEntry = false,
-  keyboardType = 'default',
+  keyboardType = "default",
   showCountrySection = false,
   countryCode,
   countryFlag,
@@ -69,7 +71,7 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
   rightIcons = [],
   rightText,
   onRightTextPress,
-  type = 'default',
+  type = "default",
   height,
   width,
   customBorderColor,
@@ -86,11 +88,16 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
   const [passwordVisible, setPasswordVisible] = useState(false);
   const inputRef = useRef<RNTextInput>(null);
 
+  // Check if we have a value to determine initial animation state
+  const hasValue = value && value.length > 0;
+
   // Initialize animation values based on whether we already have a value
   const animatedLabelPosition = useRef(
-    new Animated.Value(value ? 1 : 0),
+    new Animated.Value(hasValue ? 1 : 0)
   ).current;
-  const animatedLabelSize = useRef(new Animated.Value(value ? 1 : 0)).current;
+  const animatedLabelSize = useRef(
+    new Animated.Value(hasValue ? 1 : 0)
+  ).current;
 
   const styles = createStyles(
     isFocused,
@@ -103,7 +110,7 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
     customErrorBorderColor,
     customBorderWidth,
     customFocusedBorderWidth,
-    customErrorBorderWidth,
+    customErrorBorderWidth
   );
 
   // Handle focus events with smoother animations
@@ -124,7 +131,7 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
   };
 
   const handleCountrySectionLayout = (event: LayoutChangeEvent) => {
-    const {width} = event.nativeEvent.layout;
+    const { width } = event.nativeEvent.layout;
     setCountrySectionWidth(width);
   };
 
@@ -148,12 +155,23 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
     setPasswordVisible(!passwordVisible);
   };
 
+  // Fix the useEffect to properly handle value changes
   useEffect(() => {
-    // Handle initial state based on value
-    if (value && animatedLabelPosition._value === 0) {
+    const currentHasValue = value && value.length > 0;
+
+    // Only animate if the state actually changes
+    if (currentHasValue && animatedLabelPosition._value === 0) {
+      // Value exists but label is down - animate up
       animateLabel(1);
+    } else if (
+      !currentHasValue &&
+      !isFocused &&
+      animatedLabelPosition._value === 1
+    ) {
+      // No value and not focused but label is up - animate down
+      animateLabel(0);
     }
-  }, []);
+  }, [value, isFocused]); // Keep both dependencies but with proper logic
 
   useEffect(() => {
     if (autoFocus && inputRef.current) {
@@ -214,15 +232,17 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
       return (
         <View
           style={styles.countrySection}
-          onLayout={handleCountrySectionLayout}>
+          onLayout={handleCountrySectionLayout}
+        >
           <TouchableOpacity
             style={styles.countryButton}
             onPress={onCountryPress}
-            disabled={!onCountryPress}>
+            disabled={!onCountryPress}
+          >
             {countryFlag && (
               <>
                 <Image
-                  source={{uri: countryFlag}}
+                  source={{ uri: countryFlag }}
                   style={styles.countryFlag}
                   resizeMode="contain"
                 />
@@ -256,10 +276,11 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
               key={index}
               style={styles.iconContainer}
               onPress={iconConfig.onPress}
-              disabled={!iconConfig.onPress}>
-              {typeof iconConfig.icon === 'string' ? (
+              disabled={!iconConfig.onPress}
+            >
+              {typeof iconConfig.icon === "string" ? (
                 <Image
-                  source={{uri: iconConfig.icon}}
+                  source={{ uri: iconConfig.icon }}
                   style={styles.iconSize}
                   resizeMode="contain"
                 />
@@ -284,10 +305,10 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
 
   // Create a combined array of rightIcons that includes the password toggle if needed
   const allRightIcons = React.useMemo(() => {
-    if (type === 'password') {
+    if (type === "password") {
       // Check if password toggle already exists in the rightIcons array
       const hasPasswordToggleIcon = rightIcons.some(
-        icon => icon.id === 'password-toggle',
+        (icon) => icon.id === "password-toggle"
       );
 
       if (!hasPasswordToggleIcon) {
@@ -295,7 +316,7 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
         return [
           ...rightIcons,
           {
-            id: 'password-toggle',
+            id: "password-toggle",
             icon: passwordVisible ? <EyeOpenIcon /> : <EyeCloseIcon />,
             onPress: togglePasswordVisibility,
           },
@@ -323,10 +344,11 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
               key={index}
               style={styles.iconContainer}
               onPress={iconConfig.onPress}
-              disabled={!iconConfig.onPress}>
-              {typeof iconConfig.icon === 'string' ? (
+              disabled={!iconConfig.onPress}
+            >
+              {typeof iconConfig.icon === "string" ? (
                 <Image
-                  source={{uri: iconConfig.icon}}
+                  source={{ uri: iconConfig.icon }}
                   style={styles.iconSize}
                   resizeMode="contain"
                 />
@@ -353,12 +375,13 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
 
   // Determine if we need to use secureTextEntry based on the type and visibility state
   const isSecureTextEntry =
-    type === 'password' ? !passwordVisible : secureTextEntry;
+    type === "password" ? !passwordVisible : secureTextEntry;
 
   return (
     <Pressable
       onPress={handleContainerPress}
-      style={[styles.container, customContainerStyles]}>
+      style={[styles.container, customContainerStyles]}
+    >
       <View
         style={[
           getInputContainerStyle(),
@@ -376,7 +399,8 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
                 ? customFocusedBorderWidth
                 : customBorderWidth,
           },
-        ]}>
+        ]}
+      >
         {renderLeftSection()}
         <View style={styles.inputWrapper}>
           <RNTextInput
@@ -389,7 +413,7 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
             autoCapitalize={autoCapitalize}
             secureTextEntry={isSecureTextEntry}
             keyboardType={keyboardType}
-            placeholder={isFocused || value ? placeholder : ''}
+            placeholder={isFocused || value ? placeholder : ""}
             editable={!disabled}
           />
         </View>
@@ -400,7 +424,7 @@ const AnimatedTextInput: React.FC<TextInputProps> = ({
         <Typography
           variant={TypographyVariant.PSMALL_REGULAR}
           customTextStyles={styles.error}
-          text={error || localError || ''}
+          text={error || localError || ""}
         />
       )}
     </Pressable>

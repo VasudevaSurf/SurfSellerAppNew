@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TextInput, TouchableOpacity, View } from "react-native";
 import ArrowDownIcon from "../../../../../../../assets/icons/ArrowDownIcon";
 import ArrowRightIcon from "../../../../../../../assets/icons/ArrowRightIcon";
@@ -38,11 +38,13 @@ interface ProductInfoStepProps {
     description: string;
   };
   updateFormData: (data: any) => void;
+  editMode?: boolean;
 }
 
 const ProductInfoStep: React.FC<ProductInfoStepProps> = ({
   formData,
   updateFormData,
+  editMode = false,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [textAlignment, setTextAlignment] = useState<
@@ -110,13 +112,21 @@ const ProductInfoStep: React.FC<ProductInfoStepProps> = ({
       : formData.category;
   };
 
+  const getHeaderText = () => {
+    return editMode ? "Update Product Information" : "Product information";
+  };
+
+  const getDescriptionHeaderText = () => {
+    return editMode ? "Update Product Description" : "Product description";
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Typography
             variant={TypographyVariant.LMEDIUM_EXTRABOLD}
-            text="Product information"
+            text={getHeaderText()}
             customTextStyles={{ color: ColorPalette.GREY_TEXT_500 }}
           />
           <InfoIconPay
@@ -171,7 +181,7 @@ const ProductInfoStep: React.FC<ProductInfoStepProps> = ({
           <View style={styles.descContainer}>
             <Typography
               variant={TypographyVariant.LMEDIUM_EXTRABOLD}
-              text="Product description"
+              text={getDescriptionHeaderText()}
               customTextStyles={styles.sectionTitle}
             />
             <InfoIconPay
@@ -181,16 +191,18 @@ const ProductInfoStep: React.FC<ProductInfoStepProps> = ({
             />
           </View>
 
-          <Button
-            text="Generate"
-            variant={ButtonVariant.PRIMARY}
-            type={ButtonType.PRIMARY}
-            state={ButtonState.AI}
-            size={ButtonSize.SMALL}
-            onPress={() => {}}
-            withShadow
-            textVariant={TypographyVariant.LMEDIUM_MEDIUM}
-          />
+          {!editMode && (
+            <Button
+              text="Generate"
+              variant={ButtonVariant.PRIMARY}
+              type={ButtonType.PRIMARY}
+              state={ButtonState.AI}
+              size={ButtonSize.SMALL}
+              onPress={() => {}}
+              withShadow
+              textVariant={TypographyVariant.LMEDIUM_MEDIUM}
+            />
+          )}
         </View>
 
         <View style={styles.toolbar}>
@@ -317,7 +329,11 @@ const ProductInfoStep: React.FC<ProductInfoStepProps> = ({
               textFormat.italic && styles.italicText,
               textFormat.underline && styles.underlineText,
             ]}
-            placeholder="Sonic Wave Powerful sound, deep bass, 12H playtime, Bluetooth. Perfect for any space!"
+            placeholder={
+              editMode
+                ? "Update your product description..."
+                : "Sonic Wave Powerful sound, deep bass, 12H playtime, Bluetooth. Perfect for any space!"
+            }
             placeholderTextColor={ColorPalette.PlaceholderText}
             multiline={true}
             numberOfLines={6}

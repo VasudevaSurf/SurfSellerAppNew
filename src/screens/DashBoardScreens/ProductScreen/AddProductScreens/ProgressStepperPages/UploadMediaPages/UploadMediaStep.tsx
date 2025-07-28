@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Alert, Image, TouchableOpacity, View } from "react-native";
 import InfoIconPay from "../../../../../../../assets/icons/InfoIconPay";
 import CircleOutlineClose from "../../../../../../../assets/icons/NewProductIcons/CircleOutlineClose";
@@ -19,7 +19,17 @@ import { ColorPalette } from "../../../../../../config/colorPalette";
 import { getFigmaDimension } from "../../../../../../helpers/screenSize";
 import { styles } from "./UploadMediaStep.styles";
 
-const UploadMediaStep = () => {
+interface UploadMediaStepProps {
+  formData: any;
+  updateFormData: (data: any) => void;
+  editMode?: boolean;
+}
+
+const UploadMediaStep: React.FC<UploadMediaStepProps> = ({
+  formData,
+  updateFormData,
+  editMode = false,
+}) => {
   const [uploadStatus, setUploadStatus] = useState("initial");
   const [uploadProgress, setUploadProgress] = useState(30);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -55,6 +65,23 @@ const UploadMediaStep = () => {
     },
   ]);
 
+  // Pre-fill images if in edit mode
+  useEffect(() => {
+    if (editMode && formData.images && formData.images.length > 0) {
+      const preFilledFiles = formData.images.map((imageUrl, index) => ({
+        id: `prefilled-${index}`,
+        name: `product-image-${index + 1}.jpg`,
+        size: "Unknown",
+        date: "Existing",
+        thumbnailSource: { uri: imageUrl },
+        isExisting: true,
+      }));
+
+      setFiles(preFilledFiles);
+      setUploadStatus("completed");
+    }
+  }, [editMode]); // Remove formData.images from dependencies
+
   const handleDelete = (fileId: string) => {
     Alert.alert("Delete File", "Are you sure you want to delete this file?", [
       {
@@ -64,7 +91,19 @@ const UploadMediaStep = () => {
       {
         text: "Delete",
         onPress: () => {
-          setFiles(files.filter((file) => file.id !== fileId));
+          const updatedFiles = files.filter((file) => file.id !== fileId);
+          setFiles(updatedFiles);
+
+          // Update form data
+          const imageUrls = updatedFiles
+            .filter((file) => file.thumbnailSource?.uri)
+            .map((file) => file.thumbnailSource.uri);
+          updateFormData({ images: imageUrls });
+
+          // If no files left, reset to initial state
+          if (updatedFiles.length === 0) {
+            setUploadStatus("initial");
+          }
         },
         style: "destructive",
       },
@@ -97,12 +136,39 @@ const UploadMediaStep = () => {
       if (progress >= 100) {
         clearInterval(progressInterval);
         setUploadStatus("completed");
+
+        // Simulate adding new files
+        const newFiles = [
+          {
+            id: `new-${Date.now()}-1`,
+            name: "new-product-1.jpg",
+            size: "180 KB",
+            date: new Date().toLocaleDateString(),
+            thumbnailSource: require("../../../../../../../assets/images/sample.png"),
+          },
+          {
+            id: `new-${Date.now()}-2`,
+            name: "new-product-2.jpg",
+            size: "220 KB",
+            date: new Date().toLocaleDateString(),
+            thumbnailSource: require("../../../../../../../assets/images/sample.png"),
+          },
+        ];
+
+        const updatedFiles = [...files, ...newFiles];
+        setFiles(updatedFiles);
+
+        // Update form data with new images
+        const imageUrls = updatedFiles
+          .filter((file) => file.thumbnailSource?.uri)
+          .map((file) => file.thumbnailSource.uri);
+        updateFormData({ images: imageUrls });
       }
     }, 500);
   };
 
   const handleCancelUpload = () => {
-    setUploadStatus("initial");
+    setUploadStatus(files.length > 0 ? "completed" : "initial");
     setUploadProgress(0);
   };
 
@@ -135,13 +201,27 @@ const UploadMediaStep = () => {
     },
   ];
 
+  const getHeaderText = () => {
+    if (editMode && files.length > 0) {
+      return "Update Product Images";
+    }
+    return "Product Images";
+  };
+
+  const getBrowseButtonText = () => {
+    if (editMode && files.length > 0) {
+      return "Add More Files";
+    }
+    return "Browse Files";
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.mainHeader}>
         <View style={styles.headerContainer}>
           <Typography
             variant={TypographyVariant.LMEDIUM_EXTRASEMIBOLD}
-            text="Product Images"
+            text={getHeaderText()}
             customTextStyles={{ color: ColorPalette.GREY_TEXT_500 }}
           />
           <InfoIconPay
@@ -152,25 +232,45 @@ const UploadMediaStep = () => {
           />
         </View>
 
-        <View style={styles.uploadContainer}>
-          <View style={styles.uploadBox}>
-            <CloudManIcon style={undefined} size={70} />
-            <Button
-              text="Browse Files"
-              variant={ButtonVariant.PRIMARY}
-              state={ButtonState.FILEUPLOAD}
-              size={ButtonSize.SMALL}
-              type={ButtonType.PRIMARY}
-              onPress={handleBrowseFiles}
-              withShadow
+        {(uploadStatus === "initial" || (editMode && files.length === 0)) && (
+          <View style={styles.uploadContainer}>
+            <View style={styles.uploadBox}>
+              <CloudManIcon style={undefined} size={70} />
+              <Button
+                text={getBrowseButtonText()}
+                variant={ButtonVariant.PRIMARY}
+                state={ButtonState.FILEUPLOAD}
+                size={ButtonSize.SMALL}
+                type={ButtonType.PRIMARY}
+                onPress={handleBrowseFiles}
+                withShadow
+              />
+            </View>
+            <Typography
+              variant={TypographyVariant.LMEDIUM_REGULAR}
+              text="PNG, JPG, GIF up to 1024MB"
+              customTextStyles={{ color: ColorPalette.GREY_TEXT_100 }}
             />
           </View>
-          <Typography
-            variant={TypographyVariant.LMEDIUM_REGULAR}
-            text="PNG, JPG, GIF up to 1024MB"
-            customTextStyles={{ color: ColorPalette.GREY_TEXT_100 }}
-          />
-        </View>
+        )}
+
+        {/* Show add more button if files exist */}
+        {uploadStatus === "completed" && files.length > 0 && (
+          <View style={{ alignItems: "center", marginTop: 16 }}>
+            <Button
+              text="Add More Images"
+              variant={ButtonVariant.PRIMARY}
+              state={ButtonState.DEFAULT}
+              size={ButtonSize.SMALL}
+              type={ButtonType.OUTLINED}
+              onPress={handleBrowseFiles}
+              customStyles={{
+                borderWidth: 1,
+                borderColor: ColorPalette.PURPLE_300,
+              }}
+            />
+          </View>
+        )}
       </View>
 
       <AddModal
@@ -232,16 +332,16 @@ const UploadMediaStep = () => {
         </View>
       )}
 
-      {uploadStatus === "completed" && (
+      {uploadStatus === "completed" && files.length > 0 && (
         <View style={styles.showCaseContainer}>
           <View style={styles.showCaseHeader}>
             <Typography
-              text="Recent Uploaded"
+              text={editMode ? "Product Images" : "Recent Uploaded"}
               variant={TypographyVariant.LMEDIUM_EXTRABOLD}
               customTextStyles={{ color: ColorPalette.GREY_TEXT_500 }}
             />
             <Typography
-              text="4 items"
+              text={`${files.length} items`}
               variant={TypographyVariant.PSMALL_MEDIUM}
               customTextStyles={{ color: ColorPalette.GREY_TEXT_100 }}
             />
@@ -263,7 +363,7 @@ const UploadMediaStep = () => {
         </View>
       )}
 
-      {uploadStatus === "initial" && (
+      {uploadStatus === "initial" && !editMode && (
         <View style={styles.tipsContainer}>
           <View style={styles.mainTips}>
             <Typography

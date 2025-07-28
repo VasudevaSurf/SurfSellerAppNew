@@ -490,6 +490,42 @@ const ProductScreen = () => {
                 const isUpdatingThisProduct =
                   updatingStatus === product.product_id;
 
+                // Create enhanced product data using complete API response
+                const productData = {
+                  productId: product.product_id,
+                  productName: product.product,
+                  price: product.price, // Use raw price without currency symbol
+                  category: product.category || "",
+                  subcategory: "", // API doesn't provide subcategory in list
+                  description:
+                    product.full_description || product.short_description || "",
+                  images: product.image_url ? [product.image_url] : [],
+                  productCode: product.product_id, // Using product_id as product code
+                  quantity: product.amount.toString(),
+                  minQuantity: product.min_qty?.toString() || "",
+                  maxQuantity: product.max_qty?.toString() || "",
+                  trackInventory: product.amount > 0, // Assume tracking if has stock
+                  taxType: "VAT", // Default value
+                  brand: product.company_name || "",
+                  color: "",
+                  size: "",
+                  weight: "",
+                  manufacturer: product.company_name || "",
+                  countryOfOrigin: "",
+                  status: product.status,
+                  // Additional data from API
+                  listPrice: product.list_price,
+                  formatListPrice: product.format_list_price,
+                  productType: product.product_type,
+                  companyId: product.company_id,
+                  isReturnable: product.is_returnable,
+                  returnPeriod: product.return_period,
+                  averageRating: product.average_rating,
+                  ageVerification: product.age_verification,
+                  ageLimit: product.age_limit,
+                  statusDetails: product.status_details,
+                };
+
                 return (
                   <ProductInfo
                     key={product.product_id}
@@ -500,6 +536,7 @@ const ProductScreen = () => {
                     platformFee="€0.00"
                     stock={product.amount.toString()}
                     active={product.status === "A"}
+                    productData={productData} // Pass the enhanced product data
                     onActiveChange={(isActive) =>
                       handleToggleProductStatus(product.product_id, isActive)
                     }

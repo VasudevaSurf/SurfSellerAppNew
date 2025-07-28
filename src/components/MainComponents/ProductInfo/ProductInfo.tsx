@@ -36,11 +36,50 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   onActiveChange,
   onShare,
   onMoreOptions,
+  // Add new optional props for edit mode
+  productData,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
 
   const handlePress = () => {
+    // Navigate to AddProduct with pre-filled data for editing
+    navigate("Dashboard", {
+      screen: "Product",
+      params: {
+        screen: "AddProduct",
+        params: {
+          productId,
+          editMode: true,
+          productData: productData || {
+            productId,
+            productName,
+            price: sellerPrice.replace("€", ""), // Remove currency symbol
+            category: "", // Will be fetched from API
+            subcategory: "",
+            description: "",
+            images: orderImage ? [orderImage] : [],
+            productCode: "",
+            quantity: stock,
+            minQuantity: "",
+            maxQuantity: "",
+            trackInventory: false,
+            taxType: "VAT",
+            brand: "",
+            color: "",
+            size: "",
+            weight: "",
+            manufacturer: "",
+            countryOfOrigin: "",
+            status: active ? "A" : "D",
+          },
+        },
+      },
+    });
+  };
+
+  const handlePreview = () => {
+    // Navigate to ProductDetailsScreen for preview
     navigate("Dashboard", {
       screen: "Product",
       params: {
@@ -48,20 +87,23 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
         params: { productId },
       },
     });
+    setShowModal(false);
   };
 
-  const handleUploadCsv = () => {
-    console.log("Upload CSV pressed");
+  const handleDelete = () => {
+    console.log("Delete product:", productId);
+    setShowModal(false);
+    // TODO: Implement delete functionality
   };
 
-  const handleAddManually = () => {
-    console.log("Add manually pressed");
+  const handleCancel = () => {
+    setShowModal(false);
   };
 
   const buttonsTwo: ButtonConfig[] = [
     {
       text: "Preview",
-      onPress: () => handleUploadCsv(),
+      onPress: handlePreview,
       variant: ButtonVariant.PRIMARY,
       state: ButtonState.DEFAULT,
       size: ButtonSize.MEDIUM,
@@ -69,7 +111,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     },
     {
       text: "Delete",
-      onPress: () => handleAddManually(),
+      onPress: handleDelete,
       variant: ButtonVariant.PRIMARY,
       state: ButtonState.DEFAULT,
       type: ButtonType.OUTLINED,
@@ -80,7 +122,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     },
     {
       text: "Cancel",
-      onPress: () => handleAddManually(),
+      onPress: handleCancel,
       variant: ButtonVariant.PRIMARY,
       state: ButtonState.DEFAULT,
       type: ButtonType.OUTLINED,

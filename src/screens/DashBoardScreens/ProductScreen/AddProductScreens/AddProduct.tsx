@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRoute, RouteProp } from "@react-navigation/native";
 import ArrowLeftIcon from "../../../../../assets/icons/ArrowLeftIcon";
 import {
   Button,
@@ -28,23 +29,53 @@ const STEPS = [
   { id: 4, label: "Variant(s)" },
 ];
 
+interface RouteParams {
+  productId?: string;
+  editMode?: boolean;
+  productData?: {
+    productId?: string;
+    productName: string;
+    price: string;
+    category: string;
+    subcategory?: string;
+    description: string;
+    images: string[];
+    productCode: string;
+    quantity: string;
+    minQuantity: string;
+    maxQuantity: string;
+    trackInventory: boolean;
+    taxType: string;
+    brand: string;
+    color: string;
+    size: string;
+    weight: string;
+    manufacturer: string;
+    countryOfOrigin: string;
+    status?: string;
+  };
+}
+
+type AddProductRouteProp = RouteProp<{ AddProduct: RouteParams }, "AddProduct">;
+
 const AddProduct = () => {
+  const route = useRoute<AddProductRouteProp>();
+  const { productId, editMode = false, productData } = route.params || {};
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     productName: "",
     price: "",
     category: "",
+    subcategory: "",
     description: "",
-
     images: [],
-
     productCode: "",
     quantity: "",
     minQuantity: "",
     maxQuantity: "",
     trackInventory: false,
     taxType: "VAT",
-
     brand: "",
     color: "",
     size: "",
@@ -52,6 +83,32 @@ const AddProduct = () => {
     manufacturer: "",
     countryOfOrigin: "",
   });
+
+  // Pre-fill form data if in edit mode
+  useEffect(() => {
+    if (editMode && productData) {
+      setFormData({
+        productName: productData.productName || "",
+        price: productData.price || "",
+        category: productData.category || "",
+        subcategory: productData.subcategory || "",
+        description: productData.description || "",
+        images: productData.images || [],
+        productCode: productData.productCode || "",
+        quantity: productData.quantity || "",
+        minQuantity: productData.minQuantity || "",
+        maxQuantity: productData.maxQuantity || "",
+        trackInventory: productData.trackInventory || false,
+        taxType: productData.taxType || "VAT",
+        brand: productData.brand || "",
+        color: productData.color || "",
+        size: productData.size || "",
+        weight: productData.weight || "",
+        manufacturer: productData.manufacturer || "",
+        countryOfOrigin: productData.countryOfOrigin || "",
+      });
+    }
+  }, [editMode, productData]);
 
   const updateFormData = (newData) => {
     setFormData((prevData) => ({ ...prevData, ...newData }));
@@ -73,6 +130,11 @@ const AddProduct = () => {
 
   const handleSubmit = () => {
     console.log("Form submitted:", formData);
+    console.log("Edit mode:", editMode);
+    console.log("Product ID:", productId);
+
+    // For now, just go back to product screen
+    // TODO: Implement actual API call for create/update
     goBack();
   };
 
@@ -88,23 +150,53 @@ const AddProduct = () => {
           <ProductInfoStep
             formData={formData}
             updateFormData={updateFormData}
+            editMode={editMode}
           />
         );
       case 2:
-        return <UploadMediaStep />;
+        return (
+          <UploadMediaStep
+            formData={formData}
+            updateFormData={updateFormData}
+            editMode={editMode}
+          />
+        );
       case 3:
-        return <InventoryStep />;
+        return (
+          <InventoryStep
+            formData={formData}
+            updateFormData={updateFormData}
+            editMode={editMode}
+          />
+        );
       case 4:
-        return <FeaturesStep />;
+        return (
+          <FeaturesStep
+            formData={formData}
+            updateFormData={updateFormData}
+            editMode={editMode}
+          />
+        );
       default:
         return null;
     }
   };
 
+  const getHeaderTitle = () => {
+    return editMode ? "Edit Product" : "Add Product";
+  };
+
+  const getSubmitButtonText = () => {
+    if (editMode) {
+      return currentStep === STEPS.length ? "Update Product" : "Continue";
+    }
+    return currentStep === STEPS.length ? "Save Product" : "Continue";
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
       <Header
-        name="Add Product"
+        name={getHeaderTitle()}
         variant={TypographyVariant.H6_SMALL_SEMIBOLD}
         textColor={ColorPalette.AgreeTerms}
         leftIcon={
@@ -147,7 +239,7 @@ const AddProduct = () => {
         }}
       >
         <Button
-          text={currentStep === STEPS.length ? "Save Product" : "Continue"}
+          text={getSubmitButtonText()}
           onPress={currentStep === STEPS.length ? handleSubmit : handleNext}
           variant={ButtonVariant.PRIMARY}
           state={ButtonState.DEFAULT}
