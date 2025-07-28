@@ -7,6 +7,8 @@ import {
   Product,
   searchProductsApi,
   ProductFilters,
+  deleteProductApi,
+  DeleteProductResponse,
 } from "../../services/apiService";
 
 // Define the ProductDetail interface
@@ -31,6 +33,9 @@ interface ProductsState {
     lowStock: number;
   };
   searchTerm: string;
+  // New state for deletion
+  deletingProducts: string[]; // Array of product IDs being deleted
+  deleteError: string | null;
 }
 
 const initialState: ProductsState = {
@@ -49,6 +54,9 @@ const initialState: ProductsState = {
     lowStock: 0,
   },
   searchTerm: "",
+  // Initialize new deletion state
+  deletingProducts: [],
+  deleteError: null,
 };
 
 // Enhanced fetchProducts with filters
@@ -258,6 +266,81 @@ export const fetchProductDetails = createAsyncThunk(
   }
 );
 
+// NEW: Delete Product Thunk
+export const deleteProduct = createAsyncThunk(
+  "products/deleteProduct",
+  async (
+    {
+      userId,
+      productIds,
+    }: {
+      userId: string;
+      productIds: string | string[];
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      console.log("deleteProduct thunk called with:", { userId, productIds });
+
+      const response = await deleteProductApi(userId, productIds);
+
+      if (!response.result) {
+        throw new Error(response.message || "Failed to delete product");
+      }
+
+      return {
+        deletedProductIds: Array.isArray(productIds)
+          ? productIds
+          : [productIds],
+        message: response.message,
+      };
+    } catch (error: any) {
+      console.error("deleteProduct thunk error:", error);
+      return rejectWithValue(error.message || "Failed to delete product");
+    }
+  }
+);
+
+// NEW: Delete Multiple Products Thunk
+export const deleteMultipleProducts = createAsyncThunk(
+  "products/deleteMultipleProducts",
+  async (
+    {
+      userId,
+      productIds,
+    }: {
+      userId: string;
+      productIds: string[];
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      console.log("deleteMultipleProducts thunk called with:", {
+        userId,
+        productIds,
+      });
+
+      if (productIds.length === 0) {
+        throw new Error("No products selected for deletion");
+      }
+
+      const response = await deleteProductApi(userId, productIds);
+
+      if (!response.result) {
+        throw new Error(response.message || "Failed to delete products");
+      }
+
+      return {
+        deletedProductIds: productIds,
+        message: response.message,
+      };
+    } catch (error: any) {
+      console.error("deleteMultipleProducts thunk error:", error);
+      return rejectWithValue(error.message || "Failed to delete products");
+    }
+  }
+);
+
 const productsSlice = createSlice({
   name: "products",
   initialState,
@@ -290,6 +373,27 @@ const productsSlice = createSlice({
       if (productIndex !== -1) {
         state.products[productIndex].status = status;
       }
+    },
+    // NEW: Clear delete error
+    clearDeleteError: (state) => {
+      console.log("clearDeleteError called");
+      state.deleteError = null;
+    },
+    // NEW: Remove product from local state (optimistic update)
+    removeProductFromState: (state, action) => {
+      const productId = action.payload;
+      console.log("removeProductFromState called with:", productId);
+      state.products = state.products.filter((p) => p.product_id !== productId);
+      state.totalItems = Math.max(0, state.totalItems - 1);
+    },
+    // NEW: Remove multiple products from local state
+    removeMultipleProductsFromState: (state, action) => {
+      const productIds = action.payload;
+      console.log("removeMultipleProductsFromState called with:", productIds);
+      state.products = state.products.filter(
+        (p) => !productIds.includes(p.product_id)
+      );
+      state.totalItems = Math.max(0, state.totalItems - productIds.length);
     },
   },
   extraReducers: (builder) => {
@@ -404,6 +508,99 @@ const productsSlice = createSlice({
         console.log("fetchProductDetails.rejected with:", action.payload);
         state.loading = false;
         state.error = action.payload as string;
+      })
+
+      // NEW: Delete Product Cases
+      .addCase(deleteProduct.pending, (state, action) => {
+        console.log("deleteProduct.pending");
+        const productIds = Array.isArray(action.meta.arg.productIds)
+          ? action.meta.arg.productIds
+          : [action.meta.arg.productIds];
+
+        // Add products to deleting list
+        state.deletingProducts = [...state.deletingProducts, ...productIds];
+        state.deleteError = null;
+      })
+      .addCase(deleteProduct.fulfilled, (state, action) => {
+        console.log("deleteProduct.fulfilled with:", action.payload);
+
+        const { deletedProductIds } = action.payload;
+
+        // Remove products from local state
+        state.products = state.products.filter(
+          (product) => !deletedProductIds.includes(product.product_id)
+        );
+
+        // Update total items count
+        state.totalItems = Math.max(
+          0,
+          state.totalItems - deletedProductIds.length
+        );
+
+        // Remove from deleting list
+        state.deletingProducts = state.deletingProducts.filter(
+          (id) => !deletedProductIds.includes(id)
+        );
+
+        state.deleteError = null;
+      })
+      .addCase(deleteProduct.rejected, (state, action) => {
+        console.log("deleteProduct.rejected with:", action.payload);
+
+        // Remove from deleting list on error
+        const productIds = Array.isArray(action.meta.arg.productIds)
+          ? action.meta.arg.productIds
+          : [action.meta.arg.productIds];
+
+        state.deletingProducts = state.deletingProducts.filter(
+          (id) => !productIds.includes(id)
+        );
+
+        state.deleteError = action.payload as string;
+      })
+
+      // NEW: Delete Multiple Products Cases
+      .addCase(deleteMultipleProducts.pending, (state, action) => {
+        console.log("deleteMultipleProducts.pending");
+        const { productIds } = action.meta.arg;
+
+        // Add products to deleting list
+        state.deletingProducts = [...state.deletingProducts, ...productIds];
+        state.deleteError = null;
+      })
+      .addCase(deleteMultipleProducts.fulfilled, (state, action) => {
+        console.log("deleteMultipleProducts.fulfilled with:", action.payload);
+
+        const { deletedProductIds } = action.payload;
+
+        // Remove products from local state
+        state.products = state.products.filter(
+          (product) => !deletedProductIds.includes(product.product_id)
+        );
+
+        // Update total items count
+        state.totalItems = Math.max(
+          0,
+          state.totalItems - deletedProductIds.length
+        );
+
+        // Remove from deleting list
+        state.deletingProducts = state.deletingProducts.filter(
+          (id) => !deletedProductIds.includes(id)
+        );
+
+        state.deleteError = null;
+      })
+      .addCase(deleteMultipleProducts.rejected, (state, action) => {
+        console.log("deleteMultipleProducts.rejected with:", action.payload);
+
+        // Remove from deleting list on error
+        const { productIds } = action.meta.arg;
+        state.deletingProducts = state.deletingProducts.filter(
+          (id) => !productIds.includes(id)
+        );
+
+        state.deleteError = action.payload as string;
       });
   },
 });
@@ -414,6 +611,9 @@ export const {
   clearProducts,
   resetProductsState,
   updateProductStatus,
+  clearDeleteError,
+  removeProductFromState,
+  removeMultipleProductsFromState,
 } = productsSlice.actions;
 
 export default productsSlice.reducer;

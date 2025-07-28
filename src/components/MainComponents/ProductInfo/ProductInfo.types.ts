@@ -12,4 +12,39 @@ export interface ProductInfoProps {
   onActiveChange?: (isActive: boolean) => void;
   onShare?: () => void;
   onMoreOptions?: () => void;
+  onLongPress?: (productId: string) => void; // NEW: Add long press handler
+  // NEW: Add productData prop for edit mode
+  productData?: {
+    productId?: string;
+    productName: string;
+    price: string;
+    category: string;
+    subcategory?: string;
+    description: string;
+    images: string[];
+    productCode: string;
+    quantity: string;
+    minQuantity: string;
+    maxQuantity: string;
+    trackInventory: boolean;
+    taxType: string;
+    brand: string;
+    color: string;
+    size: string;
+    weight: string;
+    manufacturer: string;
+    countryOfOrigin: string;
+    status?: string;
+    // Additional API data
+    listPrice?: string;
+    formatListPrice?: string;
+    productType?: string;
+    companyId?: string;
+    isReturnable?: boolean;
+    returnPeriod?: string;
+    averageRating?: string;
+    ageVerification?: boolean;
+    ageLimit?: string;
+    statusDetails?: any;
+  };
 }

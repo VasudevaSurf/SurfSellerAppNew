@@ -12,6 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import BellIcon from "../../../../assets/icons/BellIcon";
 import PlusIcon from "../../../../assets/icons/PlusIcon";
+import TrashIcon from "@/assets/icons/NewProductIcons/TrashIcon";
+import CheckIcon from "../../../../assets/icons/CheckIcon";
 import {
   AddModal,
   ButtonConfig,
@@ -41,6 +43,8 @@ import {
   setCurrentFilter,
   setSearchTerm,
   updateProductStatus,
+  deleteMultipleProducts,
+  clearDeleteError,
 } from "../../../redux/slices/productsSlice";
 import { AppDispatch, RootState } from "../../../redux/store";
 import { styles } from "./ProductScreen.styles";
@@ -51,6 +55,11 @@ const ProductScreen = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
+  // NEW: Multi-select state
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
 
   const userId = useSelector(
     (state: RootState) => state.auth.userData?.user_id
@@ -64,6 +73,8 @@ const ProductScreen = () => {
     currentFilter,
     filterCounts,
     searchTerm,
+    deletingProducts,
+    deleteError,
   } = useSelector((state: RootState) => state.products);
 
   console.log("ProductScreen - User ID:", userId);
@@ -75,6 +86,8 @@ const ProductScreen = () => {
     currentFilter,
     filterCounts,
     searchTerm,
+    deletingProducts,
+    deleteError,
   });
 
   // Create filter options with dynamic counts
@@ -123,6 +136,20 @@ const ProductScreen = () => {
       setSelectedFilter(newSelectedFilter);
     }
   }, [currentFilter, filterCounts]);
+
+  // NEW: Clear selected products when switching filters or search
+  useEffect(() => {
+    if (isMultiSelectMode) {
+      setSelectedProducts([]);
+    }
+  }, [currentFilter, searchTerm]);
+
+  // NEW: Clear delete error when component mounts
+  useEffect(() => {
+    if (deleteError) {
+      dispatch(clearDeleteError());
+    }
+  }, [dispatch, deleteError]);
 
   // Function to fetch products based on current filter
   const fetchProductsForFilter = (filterId: string, search: string = "") => {
@@ -198,6 +225,12 @@ const ProductScreen = () => {
     setSelectedFilter(option);
     dispatch(setCurrentFilter(option.id));
     fetchProductsForFilter(option.id, searchText);
+
+    // Exit multi-select mode when filter changes
+    if (isMultiSelectMode) {
+      setIsMultiSelectMode(false);
+      setSelectedProducts([]);
+    }
   };
 
   // Handle search with debouncing
@@ -247,6 +280,125 @@ const ProductScreen = () => {
     setShowAddModal(false);
   };
 
+  // NEW: Multi-select functions
+  const activateMultiSelectMode = (productId: string) => {
+    console.log("Activating multi-select mode with product:", productId);
+    setIsMultiSelectMode(true);
+    setSelectedProducts([productId]);
+
+    // Optional: Add haptic feedback
+    // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const exitMultiSelectMode = () => {
+    console.log("Exiting multi-select mode");
+    setIsMultiSelectMode(false);
+    setSelectedProducts([]);
+  };
+
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProducts((prev) => {
+      const isSelected = prev.includes(productId);
+      const newSelection = isSelected
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId];
+
+      console.log("Product selection toggled:", {
+        productId,
+        isSelected,
+        newSelection,
+      });
+
+      // If no products selected, exit multi-select mode
+      if (newSelection.length === 0) {
+        setIsMultiSelectMode(false);
+      }
+
+      return newSelection;
+    });
+  };
+
+  const selectAllProducts = () => {
+    const allProductIds = products.map((p) => p.product_id);
+    setSelectedProducts(allProductIds);
+    console.log("All products selected:", allProductIds);
+  };
+
+  const deselectAllProducts = () => {
+    setSelectedProducts([]);
+    console.log("All products deselected");
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedProducts.length === 0) {
+      Alert.alert("No Selection", "Please select products to delete.");
+      return;
+    }
+
+    setShowDeleteConfirmModal(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    setShowDeleteConfirmModal(false);
+
+    if (!userId) {
+      Alert.alert("Error", "Unable to delete products. Please try again.");
+      return;
+    }
+
+    if (selectedProducts.length === 0) {
+      return;
+    }
+
+    try {
+      console.log("Deleting multiple products:", selectedProducts);
+
+      const result = await dispatch(
+        deleteMultipleProducts({
+          userId,
+          productIds: selectedProducts,
+        })
+      ).unwrap();
+
+      console.log("Products deleted successfully:", result);
+
+      // Reset multi-select state
+      setSelectedProducts([]);
+      setIsMultiSelectMode(false);
+
+      // Refresh filter counts after deletion
+      setTimeout(() => {
+        if (userId) {
+          dispatch(fetchFilterCounts({ userId }));
+        }
+      }, 500);
+
+      // Show success message
+      Alert.alert(
+        "Success",
+        `${selectedProducts.length} product${
+          selectedProducts.length > 1 ? "s" : ""
+        } deleted successfully`,
+        [{ text: "OK", style: "default" }]
+      );
+    } catch (error: any) {
+      console.error("Failed to delete products:", error);
+
+      Alert.alert(
+        "Delete Failed",
+        error.message || "Failed to delete products. Please try again.",
+        [
+          { text: "OK", style: "default" },
+          {
+            text: "Retry",
+            onPress: () => confirmBulkDelete(),
+            style: "default",
+          },
+        ]
+      );
+    }
+  };
+
   const buttons: ButtonConfig[] = [
     {
       text: "Upload CSV file",
@@ -259,6 +411,31 @@ const ProductScreen = () => {
     {
       text: "Add product Manually",
       onPress: () => handleAddManually(),
+      variant: ButtonVariant.PRIMARY,
+      state: ButtonState.DEFAULT,
+      type: ButtonType.OUTLINED,
+      size: ButtonSize.MEDIUM,
+      customStyles: { borderWidth: 1 },
+      textVariant: TypographyVariant.LMEDIUM_EXTRASEMIBOLD,
+    },
+  ];
+
+  // NEW: Delete confirmation modal buttons
+  const deleteConfirmButtons: ButtonConfig[] = [
+    {
+      text: `Delete ${selectedProducts.length} Product${
+        selectedProducts.length > 1 ? "s" : ""
+      }`,
+      onPress: confirmBulkDelete,
+      variant: ButtonVariant.PRIMARY,
+      state: ButtonState.DEFAULT,
+      size: ButtonSize.MEDIUM,
+      customStyles: { backgroundColor: ColorPalette.RED_100 },
+      textVariant: TypographyVariant.LMEDIUM_EXTRASEMIBOLD,
+    },
+    {
+      text: "Cancel",
+      onPress: () => setShowDeleteConfirmModal(false),
       variant: ButtonVariant.PRIMARY,
       state: ButtonState.DEFAULT,
       type: ButtonType.OUTLINED,
@@ -376,9 +553,22 @@ const ProductScreen = () => {
   return (
     <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
       <Header
-        name="Products"
+        name={
+          isMultiSelectMode ? `${selectedProducts.length} Selected` : "Products"
+        }
         variant={TypographyVariant.H6_SMALL_SEMIBOLD}
         textColor={ColorPalette.AgreeTerms}
+        leftIcon={
+          isMultiSelectMode ? (
+            <TouchableOpacity onPress={exitMultiSelectMode}>
+              <Typography
+                text="Cancel"
+                variant={TypographyVariant.LMEDIUM_MEDIUM}
+                customTextStyles={{ color: ColorPalette.PURPLE_300 }}
+              />
+            </TouchableOpacity>
+          ) : undefined
+        }
         rightIcons={[
           {
             icon: BellIcon,
@@ -407,24 +597,77 @@ const ProductScreen = () => {
             height: searchBarHeight,
           }}
         />
-        <Button
-          text="Add"
-          type={ButtonType.PRIMARY}
-          variant={ButtonVariant.PRIMARY}
-          size={ButtonSize.MEDIUM}
-          state={ButtonState.DEFAULT}
-          customStyles={{
-            height: searchBarHeight,
-            paddingHorizontal: getScreenWidth(3),
-          }}
-          IconComponent={() => (
-            <PlusIcon color={ColorPalette.White} strokeWidth={2} size={24} />
-          )}
-          iconPosition="right"
-          withShadow
-          onPress={() => setShowAddModal(true)}
-          textVariant={TypographyVariant.PMEDIUM_SEMIBOLD}
-        />
+
+        {isMultiSelectMode ? (
+          <View style={{ flexDirection: "row", gap: getScreenWidth(2) }}>
+            {selectedProducts.length > 0 && (
+              <Button
+                text={`Delete (${selectedProducts.length})`}
+                type={ButtonType.PRIMARY}
+                variant={ButtonVariant.PRIMARY}
+                size={ButtonSize.MEDIUM}
+                state={ButtonState.DEFAULT}
+                customStyles={{
+                  height: searchBarHeight,
+                  paddingHorizontal: getScreenWidth(3),
+                  backgroundColor: ColorPalette.RED_100,
+                }}
+                IconComponent={() => (
+                  <TrashIcon
+                    color={ColorPalette.White}
+                    strokeWidth={2}
+                    size={20}
+                  />
+                )}
+                iconPosition="left"
+                onPress={handleBulkDelete}
+                textVariant={TypographyVariant.PMEDIUM_SEMIBOLD}
+              />
+            )}
+
+            <Button
+              text={
+                selectedProducts.length === products.length
+                  ? "Deselect All"
+                  : "Select All"
+              }
+              type={ButtonType.OUTLINED}
+              variant={ButtonVariant.PRIMARY}
+              size={ButtonSize.MEDIUM}
+              state={ButtonState.DEFAULT}
+              customStyles={{
+                height: searchBarHeight,
+                paddingHorizontal: getScreenWidth(3),
+                borderColor: ColorPalette.PURPLE_300,
+              }}
+              onPress={
+                selectedProducts.length === products.length
+                  ? deselectAllProducts
+                  : selectAllProducts
+              }
+              textVariant={TypographyVariant.PMEDIUM_SEMIBOLD}
+            />
+          </View>
+        ) : (
+          <Button
+            text="Add"
+            type={ButtonType.PRIMARY}
+            variant={ButtonVariant.PRIMARY}
+            size={ButtonSize.MEDIUM}
+            state={ButtonState.DEFAULT}
+            customStyles={{
+              height: searchBarHeight,
+              paddingHorizontal: getScreenWidth(3),
+            }}
+            IconComponent={() => (
+              <PlusIcon color={ColorPalette.White} strokeWidth={2} size={24} />
+            )}
+            iconPosition="right"
+            withShadow
+            onPress={() => setShowAddModal(true)}
+            textVariant={TypographyVariant.PMEDIUM_SEMIBOLD}
+          />
+        )}
       </View>
 
       <View style={styles.slidingBarsContainer}>
@@ -489,6 +732,12 @@ const ProductScreen = () => {
               products.map((product) => {
                 const isUpdatingThisProduct =
                   updatingStatus === product.product_id;
+                const isSelected = selectedProducts.includes(
+                  product.product_id
+                );
+                const isBeingDeleted = deletingProducts.includes(
+                  product.product_id
+                );
 
                 // Create enhanced product data using complete API response
                 const productData = {
@@ -527,25 +776,78 @@ const ProductScreen = () => {
                 };
 
                 return (
-                  <ProductInfo
+                  <View
                     key={product.product_id}
-                    productId={product.product_id}
-                    orderImage={product.image_url}
-                    productName={product.product}
-                    sellerPrice={product.format_price}
-                    platformFee="€0.00"
-                    stock={product.amount.toString()}
-                    active={product.status === "A"}
-                    productData={productData} // Pass the enhanced product data
-                    onActiveChange={(isActive) =>
-                      handleToggleProductStatus(product.product_id, isActive)
-                    }
-                    onShare={() => console.log(`Share ${product.product}`)}
-                    onMoreOptions={() =>
-                      console.log(`More options for ${product.product}`)
-                    }
-                    style={isUpdatingThisProduct ? { opacity: 0.7 } : undefined}
-                  />
+                    style={{ position: "relative" }}
+                  >
+                    {/* Multi-select overlay */}
+                    {isMultiSelectMode && (
+                      <TouchableOpacity
+                        style={{
+                          position: "absolute",
+                          top: getScreenWidth(2),
+                          left: getScreenWidth(2),
+                          zIndex: 10,
+                          width: getScreenWidth(8),
+                          height: getScreenWidth(8),
+                          borderRadius: getScreenWidth(4),
+                          backgroundColor: isSelected
+                            ? ColorPalette.PURPLE_300
+                            : ColorPalette.White,
+                          borderWidth: 2,
+                          borderColor: isSelected
+                            ? ColorPalette.PURPLE_300
+                            : ColorPalette.GREY_200,
+                          justifyContent: "center",
+                          alignItems: "center",
+                          shadowColor: "#000",
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.1,
+                          shadowRadius: 4,
+                          elevation: 3,
+                        }}
+                        onPress={() =>
+                          toggleProductSelection(product.product_id)
+                        }
+                      >
+                        {isSelected && (
+                          <CheckIcon size={16} color={ColorPalette.White} />
+                        )}
+                      </TouchableOpacity>
+                    )}
+
+                    <ProductInfo
+                      productId={product.product_id}
+                      orderImage={product.image_url}
+                      productName={product.product}
+                      sellerPrice={product.format_price}
+                      platformFee="€0.00"
+                      stock={product.amount.toString()}
+                      active={product.status === "A"}
+                      productData={productData}
+                      onActiveChange={(isActive) =>
+                        !isMultiSelectMode &&
+                        handleToggleProductStatus(product.product_id, isActive)
+                      }
+                      onShare={() => console.log(`Share ${product.product}`)}
+                      onMoreOptions={() =>
+                        console.log(`More options for ${product.product}`)
+                      }
+                      onLongPress={activateMultiSelectMode} // NEW: Add long press handler
+                      style={[
+                        isUpdatingThisProduct || isBeingDeleted
+                          ? { opacity: 0.7 }
+                          : undefined,
+                        isSelected
+                          ? {
+                              borderColor: ColorPalette.PURPLE_300,
+                              borderWidth: 2,
+                              marginHorizontal: getScreenWidth(1),
+                            }
+                          : undefined,
+                      ]}
+                    />
+                  </View>
                 );
               })
             ) : (
@@ -570,26 +872,37 @@ const ProductScreen = () => {
         </ScrollView>
       )}
 
+      {/* Add Product Modal */}
       <AddModal
         isVisible={showAddModal}
         onClose={() => setShowAddModal(false)}
         buttons={buttons}
       />
 
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={() => setShowAddModal(true)}
-        activeOpacity={0.8}
-      >
-        <PlusIcon
-          size={24}
-          color={ColorPalette.White}
-          style={undefined}
-          strokeWidth={2.5}
-        />
-      </TouchableOpacity>
+      {/* Delete Confirmation Modal */}
+      <AddModal
+        isVisible={showDeleteConfirmModal}
+        onClose={() => setShowDeleteConfirmModal(false)}
+        headerText="Delete Products"
+        buttons={deleteConfirmButtons}
+      />
+
+      {/* Floating Add Button (hidden in multi-select mode) */}
+      {!isMultiSelectMode && (
+        <TouchableOpacity
+          style={styles.floatingButton}
+          onPress={() => setShowAddModal(true)}
+          activeOpacity={0.8}
+        >
+          <PlusIcon
+            size={24}
+            color={ColorPalette.White}
+            style={undefined}
+            strokeWidth={2.5}
+          />
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 };
-
 export default ProductScreen;

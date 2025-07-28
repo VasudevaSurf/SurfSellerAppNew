@@ -4,7 +4,9 @@ import {
   ImageSourcePropType,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import ToggleSwitch from "toggle-switch-react-native";
 import MoreVerticalIcon from "../../../../assets/icons/MoreVerticalIcon";
 import { ColorPalette } from "../../../config/colorPalette";
@@ -21,6 +23,8 @@ import { AddModal, ButtonConfig } from "../AddModal/AddModal";
 import { styles } from "./ProductInfo.styles";
 import { ProductInfoProps } from "./ProductInfo.types";
 import { navigate } from "../../../navigation/utils/navigationRef";
+import { deleteProduct } from "../../../redux/slices/productsSlice";
+import { AppDispatch, RootState } from "../../../redux/store";
 
 const DefaultProduct = require("../../../../assets/images/defaultProduct.png");
 
@@ -36,11 +40,24 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   onActiveChange,
   onShare,
   onMoreOptions,
+  onLongPress, // NEW: Add long press handler
   // Add new optional props for edit mode
   productData,
 }) => {
+  const dispatch = useDispatch<AppDispatch>();
   const [showModal, setShowModal] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
+
+  // Get userId and deletion state from Redux
+  const userId = useSelector(
+    (state: RootState) => state.auth.userData?.user_id
+  );
+  const { deletingProducts, deleteError } = useSelector(
+    (state: RootState) => state.products
+  );
+
+  // Check if this product is being deleted
+  const isDeleting = deletingProducts.includes(productId);
 
   const handlePress = () => {
     // Navigate to AddProduct with pre-filled data for editing
@@ -91,9 +108,64 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   };
 
   const handleDelete = () => {
-    console.log("Delete product:", productId);
     setShowModal(false);
-    // TODO: Implement delete functionality
+
+    if (!userId) {
+      Alert.alert("Error", "Unable to delete product. Please try again.");
+      return;
+    }
+
+    // Show confirmation dialog
+    Alert.alert(
+      "Delete Product",
+      `Are you sure you want to delete "${productName}"? This action cannot be undone.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              console.log("Deleting product:", productId);
+
+              // Dispatch delete action
+              const result = await dispatch(
+                deleteProduct({
+                  userId,
+                  productIds: productId,
+                })
+              ).unwrap();
+
+              console.log("Product deleted successfully:", result);
+
+              // Show success message
+              Alert.alert("Success", "Product deleted successfully", [
+                { text: "OK", style: "default" },
+              ]);
+            } catch (error: any) {
+              console.error("Failed to delete product:", error);
+
+              // Show error message
+              Alert.alert(
+                "Delete Failed",
+                error.message || "Failed to delete product. Please try again.",
+                [
+                  { text: "OK", style: "default" },
+                  {
+                    text: "Retry",
+                    onPress: () => handleDelete(),
+                    style: "default",
+                  },
+                ]
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleCancel = () => {
@@ -110,15 +182,26 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
       textVariant: TypographyVariant.LMEDIUM_EXTRASEMIBOLD,
     },
     {
-      text: "Delete",
+      text: isDeleting ? "Deleting..." : "Delete",
       onPress: handleDelete,
       variant: ButtonVariant.PRIMARY,
       state: ButtonState.DEFAULT,
       type: ButtonType.OUTLINED,
       size: ButtonSize.MEDIUM,
-      customStyles: { borderWidth: 1, borderColor: ColorPalette.GREY_TEXT_400 },
-      customTextStyles: { color: ColorPalette.GREY_TEXT_400 },
+      customStyles: {
+        borderWidth: 1,
+        borderColor: isDeleting
+          ? ColorPalette.GREY_TEXT_200
+          : ColorPalette.GREY_TEXT_400,
+        opacity: isDeleting ? 0.6 : 1,
+      },
+      customTextStyles: {
+        color: isDeleting
+          ? ColorPalette.GREY_TEXT_200
+          : ColorPalette.GREY_TEXT_400,
+      },
       textVariant: TypographyVariant.LMEDIUM_EXTRASEMIBOLD,
+      disabled: isDeleting,
     },
     {
       text: "Cancel",
@@ -150,7 +233,17 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   const thumbDiameter = getFigmaDimension(18);
 
   return (
-    <TouchableOpacity onPress={handlePress} style={[styles.container, style]}>
+    <TouchableOpacity
+      onPress={handlePress}
+      onLongPress={() => onLongPress?.(productId)} // NEW: Add long press handler
+      style={[
+        styles.container,
+        style,
+        // Add visual feedback for deleting state
+        isDeleting && { opacity: 0.7 },
+      ]}
+      disabled={isDeleting} // Disable interaction while deleting
+    >
       <View style={styles.imageContainer}>
         <Image
           source={getImageSource()}
@@ -158,6 +251,28 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
           resizeMode="cover"
           onError={handleImageError}
         />
+        {/* Show deletion indicator */}
+        {isDeleting && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              justifyContent: "center",
+              alignItems: "center",
+              borderRadius: getFigmaDimension(8),
+            }}
+          >
+            <Typography
+              variant={TypographyVariant.LSMALL_MEDIUM}
+              text="Deleting..."
+              customTextStyles={{ color: ColorPalette.White }}
+            />
+          </View>
+        )}
       </View>
 
       <View style={styles.infoContainer}>
@@ -172,8 +287,8 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
           </View>
           <View style={styles.iconContainer}>
             <MoreVerticalIcon
-              onPress={() => setShowModal(true)}
-              style={undefined}
+              onPress={() => !isDeleting && setShowModal(true)}
+              style={[undefined, isDeleting && { opacity: 0.5 }]}
             />
           </View>
         </View>
@@ -226,7 +341,8 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
               label={active ? "Active" : "Hidden"}
               labelStyle={styles.toggleLabel}
               size="small"
-              onToggle={(isOn) => onActiveChange?.(isOn)}
+              onToggle={(isOn) => !isDeleting && onActiveChange?.(isOn)}
+              disabled={isDeleting} // Disable toggle while deleting
               thumbOnStyle={{
                 backgroundColor: ColorPalette.White,
                 elevation: 0,
@@ -256,12 +372,14 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 height: trackHeight,
                 borderRadius: trackHeight / 2,
                 padding: 0,
+                opacity: isDeleting ? 0.5 : 1,
               }}
               trackOffStyle={{
                 width: trackWidth,
                 height: trackHeight,
                 borderRadius: trackHeight / 2,
                 padding: 0,
+                opacity: isDeleting ? 0.5 : 1,
               }}
               containerStyle={{
                 padding: 0,
@@ -272,7 +390,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
         </View>
 
         <AddModal
-          isVisible={showModal}
+          isVisible={showModal && !isDeleting}
           onClose={() => setShowModal(false)}
           buttons={buttonsTwo}
         />

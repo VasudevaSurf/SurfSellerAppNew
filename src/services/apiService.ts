@@ -183,6 +183,12 @@ export interface ProductFilters {
   itemsPerPage?: number;
 }
 
+// Add interface for delete product response
+export interface DeleteProductResponse {
+  result: boolean;
+  message: string;
+}
+
 export const fetchInitializerApi = async () => {
   try {
     const response = await apiClient.get(`/api.php`, {
@@ -584,4 +590,66 @@ export const toggleProductStatusApi = async (
 ) => {
   const status = isActive ? "A" : "D"; // A = Active, D = Disabled/Hidden
   return await updateProductStatusApi(userId, productId, status);
+};
+
+// NEW: Delete Product API Function
+export const deleteProductApi = async (
+  userId: string,
+  productIds: string | string[]
+): Promise<DeleteProductResponse> => {
+  try {
+    // Convert productIds to string format (comma-separated if multiple)
+    const productIdsString = Array.isArray(productIds)
+      ? productIds.join(",")
+      : productIds;
+
+    console.log("Deleting products:", { userId, productIds: productIdsString });
+
+    const response = await axios({
+      method: "PUT",
+      url: `https://dev.surf.mt/api.php?_d=NtSeProductsApi%2F${userId}`,
+      headers: {
+        Authorization: API_AUTH_HEADER,
+        "Content-Type": "application/json",
+      },
+      data: {
+        product_ids: productIdsString,
+        user_id: userId,
+      },
+    });
+
+    console.log("Delete product response:", response.data);
+    return response.data as DeleteProductResponse;
+  } catch (error: any) {
+    console.error("Delete Product API error:", error);
+
+    // Handle different error scenarios
+    if (error.response?.status === 404) {
+      throw new Error("Product not found");
+    } else if (error.response?.status === 403) {
+      throw new Error("You do not have permission to delete this product");
+    } else if (error.response?.status >= 500) {
+      throw new Error("Server error occurred while deleting product");
+    } else {
+      throw new Error(
+        error.response?.data?.message || "Failed to delete product"
+      );
+    }
+  }
+};
+
+// Helper function for single product deletion
+export const deleteSingleProductApi = async (
+  userId: string,
+  productId: string
+): Promise<DeleteProductResponse> => {
+  return deleteProductApi(userId, productId);
+};
+
+// Helper function for multiple product deletion
+export const deleteMultipleProductsApi = async (
+  userId: string,
+  productIds: string[]
+): Promise<DeleteProductResponse> => {
+  return deleteProductApi(userId, productIds);
 };
