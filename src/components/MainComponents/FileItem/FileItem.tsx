@@ -1,13 +1,13 @@
-import React from 'react';
-import {Image, TouchableOpacity, View} from 'react-native';
-import ImageWithStarIcon from '../../../../assets/icons/NewProductIcons/ImageWithStarIcon';
-import TrashIcon from '../../../../assets/icons/NewProductIcons/TrashIcon';
-import {ColorPalette} from '../../../config/colorPalette';
-import {Button, ButtonSize, ButtonType} from '../../UserComponents/Button';
-import {Typography} from '../../UserComponents/Typography/Typography';
-import {TypographyVariant} from '../../UserComponents/Typography/Typography.types';
-import {styles} from './FileItem.styles';
-import {FileItemProps} from './FileItem.types';
+import React from "react";
+import { Image, TouchableOpacity, View } from "react-native";
+import ImageWithStarIcon from "../../../../assets/icons/NewProductIcons/ImageWithStarIcon";
+import TrashIcon from "../../../../assets/icons/NewProductIcons/TrashIcon";
+import { ColorPalette } from "../../../config/colorPalette";
+import { Button, ButtonSize, ButtonType } from "../../UserComponents/Button";
+import { Typography } from "../../UserComponents/Typography/Typography";
+import { TypographyVariant } from "../../UserComponents/Typography/Typography.types";
+import { styles } from "./FileItem.styles";
+import { FileItemProps } from "./FileItem.types";
 
 /**
  * FileItem: A component for displaying file information with optional actions
@@ -26,18 +26,39 @@ const FileItem: React.FC<FileItemProps> = ({
   testID,
   customStyles,
 }) => {
+  // Check if the thumbnailSource is a URI object or a number
+  const isUriSource =
+    thumbnailSource &&
+    typeof thumbnailSource === "object" &&
+    thumbnailSource.uri;
+  const isNumberSource = typeof thumbnailSource === "number";
+
   return (
     <View style={[styles.container, customStyles]} testID={testID}>
       <View style={styles.fileInfo}>
         <View style={styles.thumbnailContainer}>
-          {typeof thumbnailSource === 'number' ? (
+          {isNumberSource ? (
             <>
               <Image source={thumbnailSource} style={styles.thumbnail} />
               {onDelete && (
                 <TouchableOpacity
                   style={styles.deleteIconOverlay}
                   onPress={onDelete}
-                  activeOpacity={0.7}>
+                  activeOpacity={0.7}
+                >
+                  <TrashIcon size={16} />
+                </TouchableOpacity>
+              )}
+            </>
+          ) : isUriSource ? (
+            <>
+              <Image source={thumbnailSource} style={styles.thumbnail} />
+              {onDelete && (
+                <TouchableOpacity
+                  style={styles.deleteIconOverlay}
+                  onPress={onDelete}
+                  activeOpacity={0.7}
+                >
                   <TrashIcon size={16} />
                 </TouchableOpacity>
               )}
@@ -49,7 +70,8 @@ const FileItem: React.FC<FileItemProps> = ({
                 <TouchableOpacity
                   style={styles.deleteIconOverlay}
                   onPress={onDelete}
-                  activeOpacity={0.7}>
+                  activeOpacity={0.7}
+                >
                   <TrashIcon size={20} />
                 </TouchableOpacity>
               )}
@@ -62,7 +84,7 @@ const FileItem: React.FC<FileItemProps> = ({
             variant={TypographyVariant.LMEDIUM_MEDIUM}
             text={fileName}
             numberOfLines={1}
-            customTextStyles={{color: ColorPalette.GREY_TEXT_400}}
+            customTextStyles={{ color: ColorPalette.GREY_TEXT_400 }}
           />
           <Typography
             variant={TypographyVariant.LSMALL_REGULAR}

@@ -68,14 +68,38 @@ const UploadMediaStep: React.FC<UploadMediaStepProps> = ({
   // Pre-fill images if in edit mode
   useEffect(() => {
     if (editMode && formData.images && formData.images.length > 0) {
-      const preFilledFiles = formData.images.map((imageUrl, index) => ({
-        id: `prefilled-${index}`,
-        name: `product-image-${index + 1}.jpg`,
-        size: "Unknown",
-        date: "Existing",
-        thumbnailSource: { uri: imageUrl },
-        isExisting: true,
-      }));
+      const preFilledFiles = formData.images.map((imageUrl, index) => {
+        // Extract filename from URL or create a descriptive name
+        const urlParts = imageUrl.split("/");
+        const fullFilename =
+          urlParts[urlParts.length - 1] || `product-image-${index + 1}.jpg`;
+
+        // Remove query parameters if any
+        const filename = fullFilename.split("?")[0];
+
+        // Get file extension from URL or default to jpg
+        const fileExtension = filename.includes(".")
+          ? filename.split(".").pop()?.toLowerCase()
+          : "jpg";
+
+        // Estimate file size based on image dimensions (this is approximate)
+        const estimatedSize =
+          fileExtension === "jpg" || fileExtension === "jpeg"
+            ? "180 KB"
+            : fileExtension === "png"
+            ? "250 KB"
+            : "200 KB";
+
+        return {
+          id: `prefilled-${index}`,
+          name: filename,
+          size: estimatedSize,
+          date: "Uploaded",
+          thumbnailSource: { uri: imageUrl }, // Use actual image URL
+          isExisting: true,
+          originalUrl: imageUrl, // Keep reference to original URL
+        };
+      });
 
       setFiles(preFilledFiles);
       setUploadStatus("completed");
@@ -294,26 +318,13 @@ const UploadMediaStep: React.FC<UploadMediaStepProps> = ({
               <CrossArrowsIcon style={undefined} size={18} />
             </View>
             <View style={styles.imageShowing}>
-              <Image
-                source={require("../../../../../../../assets/images/sample.png")}
-                style={styles.sampleImage}
-              />
-              <Image
-                source={require("../../../../../../../assets/images/sample.png")}
-                style={styles.sampleImage}
-              />
-              <Image
-                source={require("../../../../../../../assets/images/sample.png")}
-                style={styles.sampleImage}
-              />
-              <Image
-                source={require("../../../../../../../assets/images/sample.png")}
-                style={styles.sampleImage}
-              />
-              <Image
-                source={require("../../../../../../../assets/images/sample.png")}
-                style={styles.sampleImage}
-              />
+              {[1, 2, 3, 4, 5].map((_, index) => (
+                <Image
+                  key={index}
+                  source={require("../../../../../../../assets/images/sample.png")}
+                  style={styles.sampleImage}
+                />
+              ))}
             </View>
           </View>
           <View
