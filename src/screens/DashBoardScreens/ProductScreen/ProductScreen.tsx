@@ -43,8 +43,10 @@ import {
   setCurrentFilter,
   setSearchTerm,
   updateProductStatus,
+  updateMultipleProductsStatus,
   deleteMultipleProducts,
   clearDeleteError,
+  clearStatusUpdateError,
 } from "../../../redux/slices/productsSlice";
 import { AppDispatch, RootState } from "../../../redux/store";
 import { styles } from "./ProductScreen.styles";
@@ -54,12 +56,12 @@ const ProductScreen = () => {
   const [searchText, setSearchText] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
-  // NEW: Multi-select state
+  // Multi-select state
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
 
   const userId = useSelector(
     (state: RootState) => state.auth.userData?.user_id
@@ -75,6 +77,8 @@ const ProductScreen = () => {
     searchTerm,
     deletingProducts,
     deleteError,
+    updatingStatus = [],
+    statusUpdateError,
   } = useSelector((state: RootState) => state.products);
 
   console.log("ProductScreen - User ID:", userId);
@@ -88,6 +92,8 @@ const ProductScreen = () => {
     searchTerm,
     deletingProducts,
     deleteError,
+    updatingStatus,
+    statusUpdateError,
   });
 
   // Create filter options with dynamic counts
@@ -137,19 +143,22 @@ const ProductScreen = () => {
     }
   }, [currentFilter, filterCounts]);
 
-  // NEW: Clear selected products when switching filters or search
+  // Clear selected products when switching filters or search
   useEffect(() => {
     if (isMultiSelectMode) {
       setSelectedProducts([]);
     }
   }, [currentFilter, searchTerm]);
 
-  // NEW: Clear delete error when component mounts
+  // Clear errors when component mounts
   useEffect(() => {
     if (deleteError) {
       dispatch(clearDeleteError());
     }
-  }, [dispatch, deleteError]);
+    if (statusUpdateError) {
+      dispatch(clearStatusUpdateError());
+    }
+  }, [dispatch, deleteError, statusUpdateError]);
 
   // Function to fetch products based on current filter
   const fetchProductsForFilter = (filterId: string, search: string = "") => {
@@ -280,14 +289,11 @@ const ProductScreen = () => {
     setShowAddModal(false);
   };
 
-  // NEW: Multi-select functions
+  // Multi-select functions
   const activateMultiSelectMode = (productId: string) => {
     console.log("Activating multi-select mode with product:", productId);
     setIsMultiSelectMode(true);
     setSelectedProducts([productId]);
-
-    // Optional: Add haptic feedback
-    // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
   const exitMultiSelectMode = () => {
@@ -399,6 +405,163 @@ const ProductScreen = () => {
     }
   };
 
+  // Product status toggle function
+  const handleToggleProductStatus = async (
+    productId: string,
+    isActive: boolean
+  ) => {
+    if (!userId) {
+      console.error("No userId available for status update");
+      Alert.alert(
+        "Error",
+        "Unable to update product status. Please try again."
+      );
+      return;
+    }
+
+    console.log("Toggling product status:", { productId, isActive, userId });
+
+    // Prevent multiple simultaneous updates for the same product
+    if (updatingStatus.includes(productId)) {
+      console.log("Status update already in progress for product:", productId);
+      return;
+    }
+
+    try {
+      console.log(
+        `Updating product ${productId} status to ${
+          isActive ? "Active" : "Hidden"
+        }`
+      );
+
+      // Dispatch the async thunk
+      const result = await dispatch(
+        updateProductStatus({
+          userId,
+          productId,
+          isActive,
+        })
+      ).unwrap();
+
+      console.log("Product status successfully updated:", result);
+
+      // Show success message
+      Alert.alert(
+        "Success",
+        `Product status updated to ${isActive ? "Active" : "Hidden"}`,
+        [{ text: "OK", style: "default" }]
+      );
+
+      // Refresh filter counts after status change
+      setTimeout(() => {
+        if (userId) {
+          dispatch(fetchFilterCounts({ userId }));
+        }
+      }, 500);
+    } catch (error: any) {
+      console.error("Failed to update product status:", error);
+
+      Alert.alert(
+        "Update Failed",
+        error || "Failed to update product status. Please try again.",
+        [
+          {
+            text: "OK",
+            style: "default",
+          },
+          {
+            text: "Retry",
+            onPress: () => handleToggleProductStatus(productId, isActive),
+            style: "default",
+          },
+        ]
+      );
+    }
+  };
+
+  // Bulk status update function
+  const handleBulkStatusUpdate = async (status: "A" | "D" | "H") => {
+    if (selectedProducts.length === 0) {
+      Alert.alert("No Selection", "Please select products to update.");
+      return;
+    }
+
+    if (!userId) {
+      Alert.alert("Error", "Unable to update products. Please try again.");
+      return;
+    }
+
+    const statusText =
+      status === "A" ? "Active" : status === "D" ? "Hidden" : "Archived";
+
+    Alert.alert(
+      "Update Status",
+      `Are you sure you want to change ${selectedProducts.length} product${
+        selectedProducts.length > 1 ? "s" : ""
+      } to ${statusText}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Update",
+          onPress: async () => {
+            try {
+              console.log(
+                "Updating multiple products status:",
+                selectedProducts,
+                status
+              );
+
+              const result = await dispatch(
+                updateMultipleProductsStatus({
+                  userId,
+                  productIds: selectedProducts,
+                  status,
+                })
+              ).unwrap();
+
+              console.log("Products status updated successfully:", result);
+
+              // Reset multi-select state
+              setSelectedProducts([]);
+              setIsMultiSelectMode(false);
+
+              // Refresh filter counts after status change
+              setTimeout(() => {
+                if (userId) {
+                  dispatch(fetchFilterCounts({ userId }));
+                }
+              }, 500);
+
+              // Show success message
+              Alert.alert(
+                "Success",
+                `${selectedProducts.length} product${
+                  selectedProducts.length > 1 ? "s" : ""
+                } updated to ${statusText}`,
+                [{ text: "OK", style: "default" }]
+              );
+            } catch (error: any) {
+              console.error("Failed to update products status:", error);
+
+              Alert.alert(
+                "Update Failed",
+                error || "Failed to update products status. Please try again.",
+                [
+                  { text: "OK", style: "default" },
+                  {
+                    text: "Retry",
+                    onPress: () => handleBulkStatusUpdate(status),
+                    style: "default",
+                  },
+                ]
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const buttons: ButtonConfig[] = [
     {
       text: "Upload CSV file",
@@ -420,7 +583,7 @@ const ProductScreen = () => {
     },
   ];
 
-  // NEW: Delete confirmation modal buttons
+  // Delete confirmation modal buttons
   const deleteConfirmButtons: ButtonConfig[] = [
     {
       text: `Delete ${selectedProducts.length} Product${
@@ -446,85 +609,6 @@ const ProductScreen = () => {
   ];
 
   const searchBarHeight = getScreenHeight(6);
-
-  // Enhanced toggle status function
-  const handleToggleProductStatus = async (
-    productId: string,
-    isActive: boolean
-  ) => {
-    if (!userId) {
-      console.error("No userId available for status update");
-      Alert.alert(
-        "Error",
-        "Unable to update product status. Please try again."
-      );
-      return;
-    }
-
-    console.log("Toggling product status:", { productId, isActive, userId });
-
-    // Prevent multiple simultaneous updates
-    if (updatingStatus === productId) {
-      console.log("Status update already in progress for product:", productId);
-      return;
-    }
-
-    setUpdatingStatus(productId);
-
-    try {
-      // Update local state immediately for better UX
-      dispatch(
-        updateProductStatus({
-          productId,
-          status: isActive ? "A" : "D",
-        })
-      );
-
-      // TODO: Add actual API call here
-      // await toggleProductStatusApi(userId, productId, isActive);
-
-      console.log(
-        `Product ${productId} status successfully updated to ${
-          isActive ? "Active" : "Hidden"
-        }`
-      );
-
-      // Refresh filter counts after status change
-      setTimeout(() => {
-        if (userId) {
-          dispatch(fetchFilterCounts({ userId }));
-        }
-      }, 500);
-    } catch (error) {
-      console.error("Failed to update product status:", error);
-
-      // Revert local state change on error
-      dispatch(
-        updateProductStatus({
-          productId,
-          status: isActive ? "D" : "A", // Revert to previous state
-        })
-      );
-
-      Alert.alert(
-        "Update Failed",
-        "Failed to update product status. Please try again.",
-        [
-          {
-            text: "OK",
-            style: "default",
-          },
-          {
-            text: "Retry",
-            onPress: () => handleToggleProductStatus(productId, isActive),
-            style: "default",
-          },
-        ]
-      );
-    } finally {
-      setUpdatingStatus(null);
-    }
-  };
 
   const getEmptyStateMessage = () => {
     if (searchText.trim()) {
@@ -678,6 +762,49 @@ const ProductScreen = () => {
         />
       </View>
 
+      {/* Bulk Status Update Buttons in Multi-Select Mode */}
+      {isMultiSelectMode && selectedProducts.length > 0 && (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: getScreenWidth(2),
+            paddingHorizontal: getScreenWidth(4),
+            paddingVertical: getScreenHeight(1),
+            backgroundColor: ColorPalette.White,
+            borderBottomWidth: 1,
+            borderBottomColor: ColorPalette.GREY_100,
+          }}
+        >
+          <Button
+            text="Make Active"
+            type={ButtonType.OUTLINED}
+            variant={ButtonVariant.PRIMARY}
+            size={ButtonSize.SMALL}
+            state={ButtonState.DEFAULT}
+            customStyles={{
+              borderColor: ColorPalette.GREEN_200,
+              paddingHorizontal: getScreenWidth(3),
+            }}
+            onPress={() => handleBulkStatusUpdate("A")}
+            textVariant={TypographyVariant.PSMALL_SEMIBOLD}
+          />
+
+          <Button
+            text="Hide"
+            type={ButtonType.OUTLINED}
+            variant={ButtonVariant.PRIMARY}
+            size={ButtonSize.SMALL}
+            state={ButtonState.DEFAULT}
+            customStyles={{
+              borderColor: ColorPalette.GREY_400,
+              paddingHorizontal: getScreenWidth(3),
+            }}
+            onPress={() => handleBulkStatusUpdate("D")}
+            textVariant={TypographyVariant.PSMALL_SEMIBOLD}
+          />
+        </View>
+      )}
+
       {loading && !isRefreshing ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={ColorPalette.PURPLE_300} />
@@ -730,8 +857,9 @@ const ProductScreen = () => {
           <View style={styles.ProductContainer}>
             {products && products.length > 0 ? (
               products.map((product) => {
-                const isUpdatingThisProduct =
-                  updatingStatus === product.product_id;
+                const isUpdatingThisProduct = updatingStatus.includes(
+                  product.product_id
+                );
                 const isSelected = selectedProducts.includes(
                   product.product_id
                 );
@@ -827,13 +955,14 @@ const ProductScreen = () => {
                       productData={productData}
                       onActiveChange={(isActive) =>
                         !isMultiSelectMode &&
+                        !isUpdatingThisProduct && // Prevent clicks during update
                         handleToggleProductStatus(product.product_id, isActive)
                       }
                       onShare={() => console.log(`Share ${product.product}`)}
                       onMoreOptions={() =>
                         console.log(`More options for ${product.product}`)
                       }
-                      onLongPress={activateMultiSelectMode} // NEW: Add long press handler
+                      onLongPress={activateMultiSelectMode}
                       style={[
                         isUpdatingThisProduct || isBeingDeleted
                           ? { opacity: 0.7 }
@@ -846,7 +975,26 @@ const ProductScreen = () => {
                             }
                           : undefined,
                       ]}
+                      disabled={isUpdatingThisProduct || isBeingDeleted}
                     />
+
+                    {/* Loading indicator for status update */}
+                    {isUpdatingThisProduct && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          transform: [{ translateX: -12 }, { translateY: -12 }],
+                          zIndex: 5,
+                        }}
+                      >
+                        <ActivityIndicator
+                          size="small"
+                          color={ColorPalette.PURPLE_300}
+                        />
+                      </View>
+                    )}
                   </View>
                 );
               })
@@ -905,4 +1053,5 @@ const ProductScreen = () => {
     </SafeAreaView>
   );
 };
+
 export default ProductScreen;

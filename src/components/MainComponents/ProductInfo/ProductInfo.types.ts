@@ -1,7 +1,7 @@
 import { StyleProp, ViewStyle } from "react-native";
 
 export interface ProductInfoProps {
-  productId: string; // Add this line
+  productId: string;
   orderImage: string;
   productName: string;
   sellerPrice: string;
@@ -12,8 +12,7 @@ export interface ProductInfoProps {
   onActiveChange?: (isActive: boolean) => void;
   onShare?: () => void;
   onMoreOptions?: () => void;
-  onLongPress?: (productId: string) => void; // NEW: Add long press handler
-  // NEW: Add productData prop for edit mode
+  onLongPress?: (productId: string) => void;
   productData?: {
     productId?: string;
     productName: string;
@@ -47,4 +46,5 @@ export interface ProductInfoProps {
     ageLimit?: string;
     statusDetails?: any;
   };
+  disabled?: boolean; // NEW: Add disabled prop for status toggle functionality
 }

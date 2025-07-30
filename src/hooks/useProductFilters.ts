@@ -11,6 +11,9 @@ import {
   fetchFilterCounts,
   setCurrentFilter,
   setSearchTerm,
+  updateProductStatus,
+  updateMultipleProductsStatus,
+  clearStatusUpdateError,
 } from "../redux/slices/productsSlice";
 import { SlidingBarOption } from "../components/MainComponents/SlidingBar/SlidingBar.types";
 
@@ -30,6 +33,8 @@ export const useProductFilters = () => {
     currentFilter,
     filterCounts,
     searchTerm,
+    updatingStatus,
+    statusUpdateError,
   } = useSelector((state: RootState) => state.products);
 
   console.log("useProductFilters - Current state:", {
@@ -41,6 +46,8 @@ export const useProductFilters = () => {
     currentFilter,
     filterCounts,
     searchTerm,
+    updatingStatus,
+    statusUpdateError,
   });
 
   // Create filter options with dynamic counts
@@ -208,6 +215,81 @@ export const useProductFilters = () => {
     [fetchProductsForFilter, currentFilter, searchTerm]
   );
 
+  // NEW: Toggle product status
+  const toggleProductStatus = useCallback(
+    async (productId: string, isActive: boolean) => {
+      if (!userId) {
+        console.error("No userId available for status update");
+        throw new Error("User ID not available");
+      }
+
+      console.log("toggleProductStatus called:", { productId, isActive });
+
+      try {
+        const result = await dispatch(
+          updateProductStatus({
+            userId,
+            productId,
+            isActive,
+          })
+        ).unwrap();
+
+        console.log("Product status updated successfully:", result);
+
+        // Refresh filter counts after status change
+        setTimeout(() => {
+          refreshFilterCounts();
+        }, 500);
+
+        return result;
+      } catch (error) {
+        console.error("Failed to update product status:", error);
+        throw error;
+      }
+    },
+    [dispatch, userId, refreshFilterCounts]
+  );
+
+  // NEW: Bulk status update
+  const updateMultipleStatus = useCallback(
+    async (productIds: string[], status: "A" | "D" | "H" | "X") => {
+      if (!userId) {
+        console.error("No userId available for bulk status update");
+        throw new Error("User ID not available");
+      }
+
+      console.log("updateMultipleStatus called:", { productIds, status });
+
+      try {
+        const result = await dispatch(
+          updateMultipleProductsStatus({
+            userId,
+            productIds,
+            status,
+          })
+        ).unwrap();
+
+        console.log("Multiple products status updated successfully:", result);
+
+        // Refresh filter counts after status change
+        setTimeout(() => {
+          refreshFilterCounts();
+        }, 500);
+
+        return result;
+      } catch (error) {
+        console.error("Failed to update multiple products status:", error);
+        throw error;
+      }
+    },
+    [dispatch, userId, refreshFilterCounts]
+  );
+
+  // Clear status update error
+  const clearStatusError = useCallback(() => {
+    dispatch(clearStatusUpdateError());
+  }, [dispatch]);
+
   // Initialize filter counts on mount
   useEffect(() => {
     console.log("useProductFilters - Initialize effect, userId:", userId);
@@ -245,6 +327,8 @@ export const useProductFilters = () => {
     searchTerm,
     filterOptions,
     selectedFilter,
+    updatingStatus,
+    statusUpdateError,
 
     // Actions
     handleFilterSelect,
@@ -253,5 +337,8 @@ export const useProductFilters = () => {
     refreshFilterCounts,
     loadNextPage,
     fetchProductsForFilter,
+    toggleProductStatus,
+    updateMultipleStatus,
+    clearStatusError,
   };
 };

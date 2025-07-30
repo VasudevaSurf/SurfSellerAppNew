@@ -189,6 +189,12 @@ export interface DeleteProductResponse {
   message: string;
 }
 
+// Add interface for status update response
+export interface StatusUpdateResponse {
+  result: boolean;
+  message: string;
+}
+
 export const fetchInitializerApi = async () => {
   try {
     const response = await apiClient.get(`/api.php`, {
@@ -557,28 +563,47 @@ export const searchOrdersApi = async (
   }
 };
 
-export default apiClient;
-
+// UPDATED: Product Status Change API
 export const updateProductStatusApi = async (
   userId: string,
   productId: string,
-  status: "A" | "P" | "D"
-) => {
+  status: "A" | "D" | "H" | "X"
+): Promise<StatusUpdateResponse> => {
   try {
-    const response = await apiClient.post(`/api.php`, {
-      _d: "NtSeProductsApi",
-      user_id: userId,
-      product_id: productId,
-      status: status,
-      user_login: "csctest@gmail.com",
-      password: "Zaid@123",
+    console.log("Updating product status:", { userId, productId, status });
+
+    const response = await axios({
+      method: "PUT",
+      url: `https://dev.surf.mt/api.php?_d=NtSeProductsApi%2F${userId}`,
+      headers: {
+        Authorization: API_AUTH_HEADER,
+        "Content-Type": "application/json",
+      },
+      data: {
+        product_ids: productId,
+        user_id: userId,
+        action: "change_status",
+        status_to: status,
+      },
     });
 
     console.log("Update product status response:", response.data);
-    return response.data;
-  } catch (error) {
+    return response.data as StatusUpdateResponse;
+  } catch (error: any) {
     console.error("Update Product Status API error:", error);
-    throw error;
+
+    // Handle different error scenarios
+    if (error.response?.status === 404) {
+      throw new Error("Product not found");
+    } else if (error.response?.status === 403) {
+      throw new Error("You do not have permission to update this product");
+    } else if (error.response?.status >= 500) {
+      throw new Error("Server error occurred while updating product status");
+    } else {
+      throw new Error(
+        error.response?.data?.message || "Failed to update product status"
+      );
+    }
   }
 };
 
@@ -587,9 +612,47 @@ export const toggleProductStatusApi = async (
   userId: string,
   productId: string,
   isActive: boolean
-) => {
+): Promise<StatusUpdateResponse> => {
   const status = isActive ? "A" : "D"; // A = Active, D = Disabled/Hidden
   return await updateProductStatusApi(userId, productId, status);
+};
+
+// Bulk status update for multiple products
+export const updateMultipleProductsStatusApi = async (
+  userId: string,
+  productIds: string[],
+  status: "A" | "D" | "H" | "X"
+): Promise<StatusUpdateResponse> => {
+  try {
+    console.log("Updating multiple products status:", {
+      userId,
+      productIds,
+      status,
+    });
+
+    const response = await axios({
+      method: "PUT",
+      url: `https://dev.surf.mt/api.php?_d=NtSeProductsApi%2F${userId}`,
+      headers: {
+        Authorization: API_AUTH_HEADER,
+        "Content-Type": "application/json",
+      },
+      data: {
+        product_ids: productIds.join(","),
+        user_id: userId,
+        action: "change_status",
+        status_to: status,
+      },
+    });
+
+    console.log("Update multiple products status response:", response.data);
+    return response.data as StatusUpdateResponse;
+  } catch (error: any) {
+    console.error("Update Multiple Products Status API error:", error);
+    throw new Error(
+      error.response?.data?.message || "Failed to update products status"
+    );
+  }
 };
 
 export interface CategoryData {
@@ -728,3 +791,5 @@ export const deleteMultipleProductsApi = async (
 ): Promise<DeleteProductResponse> => {
   return deleteProductApi(userId, productIds);
 };
+
+export default apiClient;

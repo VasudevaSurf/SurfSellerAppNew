@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import ToggleSwitch from "toggle-switch-react-native";
@@ -40,26 +41,30 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   onActiveChange,
   onShare,
   onMoreOptions,
-  onLongPress, // NEW: Add long press handler
-  // Add new optional props for edit mode
+  onLongPress,
   productData,
+  disabled = false, // NEW: Add disabled prop
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const [showModal, setShowModal] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
 
-  // Get userId and deletion state from Redux
+  // Get userId and state from Redux
   const userId = useSelector(
     (state: RootState) => state.auth.userData?.user_id
   );
-  const { deletingProducts, deleteError } = useSelector(
+  const { deletingProducts, deleteError, updatingStatus } = useSelector(
     (state: RootState) => state.products
   );
 
-  // Check if this product is being deleted
+  // Check if this product is being deleted or status is being updated
   const isDeleting = deletingProducts.includes(productId);
+  const isUpdatingStatus = updatingStatus.includes(productId);
+  const isDisabled = disabled || isDeleting || isUpdatingStatus;
 
   const handlePress = () => {
+    if (isDisabled) return;
+
     // Navigate to AddProduct with pre-filled data for editing
     navigate("Dashboard", {
       screen: "Product",
@@ -172,6 +177,21 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     setShowModal(false);
   };
 
+  // UPDATED: Handle toggle change with proper error handling
+  const handleToggleChange = (isOn: boolean) => {
+    if (isDisabled) {
+      console.log("Toggle disabled, ignoring change");
+      return;
+    }
+
+    console.log("Toggle changed:", { productId, isOn });
+
+    // Call the parent handler
+    if (onActiveChange) {
+      onActiveChange(isOn);
+    }
+  };
+
   const buttonsTwo: ButtonConfig[] = [
     {
       text: "Preview",
@@ -235,14 +255,15 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   return (
     <TouchableOpacity
       onPress={handlePress}
-      onLongPress={() => onLongPress?.(productId)} // NEW: Add long press handler
+      onLongPress={() => !isDisabled && onLongPress?.(productId)}
       style={[
         styles.container,
         style,
-        // Add visual feedback for deleting state
-        isDeleting && { opacity: 0.7 },
+        // Add visual feedback for disabled states
+        isDisabled && { opacity: 0.7 },
       ]}
-      disabled={isDeleting} // Disable interaction while deleting
+      disabled={isDisabled}
+      activeOpacity={isDisabled ? 1 : 0.7}
     >
       <View style={styles.imageContainer}>
         <Image
@@ -251,6 +272,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
           resizeMode="cover"
           onError={handleImageError}
         />
+
         {/* Show deletion indicator */}
         {isDeleting && (
           <View
@@ -266,10 +288,41 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
               borderRadius: getFigmaDimension(8),
             }}
           >
+            <ActivityIndicator size="small" color={ColorPalette.White} />
             <Typography
               variant={TypographyVariant.LSMALL_MEDIUM}
               text="Deleting..."
-              customTextStyles={{ color: ColorPalette.White }}
+              customTextStyles={{
+                color: ColorPalette.White,
+                marginTop: getFigmaDimension(4),
+              }}
+            />
+          </View>
+        )}
+
+        {/* Show status update indicator */}
+        {isUpdatingStatus && !isDeleting && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(91, 1, 207, 0.3)", // Purple overlay
+              justifyContent: "center",
+              alignItems: "center",
+              borderRadius: getFigmaDimension(8),
+            }}
+          >
+            <ActivityIndicator size="small" color={ColorPalette.PURPLE_300} />
+            <Typography
+              variant={TypographyVariant.LSMALL_MEDIUM}
+              text="Updating..."
+              customTextStyles={{
+                color: ColorPalette.PURPLE_300,
+                marginTop: getFigmaDimension(4),
+              }}
             />
           </View>
         )}
@@ -281,14 +334,17 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             <Typography
               variant={TypographyVariant.LMEDIUM_MEDIUM}
               text={productName}
-              customTextStyles={styles.productNameText}
+              customTextStyles={[
+                styles.productNameText,
+                isDisabled && { color: ColorPalette.GREY_TEXT_200 },
+              ]}
               numberOfLines={2}
             />
           </View>
           <View style={styles.iconContainer}>
             <MoreVerticalIcon
-              onPress={() => !isDeleting && setShowModal(true)}
-              style={[undefined, isDeleting && { opacity: 0.5 }]}
+              onPress={() => !isDisabled && setShowModal(true)}
+              style={[undefined, isDisabled && { opacity: 0.5 }]}
             />
           </View>
         </View>
@@ -298,24 +354,36 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             <Typography
               variant={TypographyVariant.LSMALL_REGULAR}
               text="Seller Price :"
-              customTextStyles={styles.labelText}
+              customTextStyles={[
+                styles.labelText,
+                isDisabled && { color: ColorPalette.GREY_TEXT_200 },
+              ]}
             />
             <Typography
               variant={TypographyVariant.H5_SEMIBOLD}
               text={sellerPrice}
-              customTextStyles={styles.valueText}
+              customTextStyles={[
+                styles.valueText,
+                isDisabled && { color: ColorPalette.GREY_TEXT_200 },
+              ]}
             />
           </View>
           <View style={styles.platFormContainer}>
             <Typography
               variant={TypographyVariant.LSMALL_REGULAR}
               text="Platform fee :"
-              customTextStyles={styles.labelText}
+              customTextStyles={[
+                styles.labelText,
+                isDisabled && { color: ColorPalette.GREY_TEXT_200 },
+              ]}
             />
             <Typography
               variant={TypographyVariant.H5_SEMIBOLD}
               text={platformFee}
-              customTextStyles={styles.valueText}
+              customTextStyles={[
+                styles.valueText,
+                isDisabled && { color: ColorPalette.GREY_TEXT_200 },
+              ]}
             />
           </View>
         </View>
@@ -325,24 +393,35 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             <Typography
               variant={TypographyVariant.LSMALL_REGULAR}
               text="Stock :"
-              customTextStyles={styles.labelText}
+              customTextStyles={[
+                styles.labelText,
+                isDisabled && { color: ColorPalette.GREY_TEXT_200 },
+              ]}
             />
             <Typography
               variant={TypographyVariant.LSMALL_MEDIUM}
               text={stock}
-              customTextStyles={styles.valueText}
+              customTextStyles={[
+                styles.valueText,
+                isDisabled && { color: ColorPalette.GREY_TEXT_200 },
+              ]}
             />
           </View>
           <View style={styles.toggleContainer}>
             <ToggleSwitch
               isOn={active}
-              onColor={ColorPalette.Success}
-              offColor={ColorPalette.Gray}
+              onColor={
+                isDisabled ? ColorPalette.GREY_300 : ColorPalette.Success
+              }
+              offColor={isDisabled ? ColorPalette.GREY_200 : ColorPalette.Gray}
               label={active ? "Active" : "Hidden"}
-              labelStyle={styles.toggleLabel}
+              labelStyle={[
+                styles.toggleLabel,
+                isDisabled && { color: ColorPalette.GREY_TEXT_200 },
+              ]}
               size="small"
-              onToggle={(isOn) => !isDeleting && onActiveChange?.(isOn)}
-              disabled={isDeleting} // Disable toggle while deleting
+              onToggle={handleToggleChange}
+              disabled={isDisabled}
               thumbOnStyle={{
                 backgroundColor: ColorPalette.White,
                 elevation: 0,
@@ -354,6 +433,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 height: thumbDiameter,
                 borderRadius: thumbDiameter / 2,
                 margin: (trackHeight - thumbDiameter) / 2,
+                opacity: isDisabled ? 0.7 : 1,
               }}
               thumbOffStyle={{
                 backgroundColor: ColorPalette.White,
@@ -366,31 +446,42 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 height: thumbDiameter,
                 borderRadius: thumbDiameter / 2,
                 margin: (trackHeight - thumbDiameter) / 2,
+                opacity: isDisabled ? 0.7 : 1,
               }}
               trackOnStyle={{
                 width: trackWidth,
                 height: trackHeight,
                 borderRadius: trackHeight / 2,
                 padding: 0,
-                opacity: isDeleting ? 0.5 : 1,
+                opacity: isDisabled ? 0.5 : 1,
               }}
               trackOffStyle={{
                 width: trackWidth,
                 height: trackHeight,
                 borderRadius: trackHeight / 2,
                 padding: 0,
-                opacity: isDeleting ? 0.5 : 1,
+                opacity: isDisabled ? 0.5 : 1,
               }}
               containerStyle={{
                 padding: 0,
                 margin: 0,
               }}
             />
+
+            {/* Show loading indicator next to toggle during status update */}
+            {isUpdatingStatus && (
+              <View style={{ marginLeft: getFigmaDimension(8) }}>
+                <ActivityIndicator
+                  size="small"
+                  color={ColorPalette.PURPLE_300}
+                />
+              </View>
+            )}
           </View>
         </View>
 
         <AddModal
-          isVisible={showModal && !isDeleting}
+          isVisible={showModal && !isDisabled}
           onClose={() => setShowModal(false)}
           buttons={buttonsTwo}
         />

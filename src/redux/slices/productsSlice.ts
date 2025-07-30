@@ -9,6 +9,10 @@ import {
   ProductFilters,
   deleteProductApi,
   DeleteProductResponse,
+  toggleProductStatusApi,
+  updateProductStatusApi,
+  updateMultipleProductsStatusApi,
+  StatusUpdateResponse,
 } from "../../services/apiService";
 
 // Define the ProductDetail interface
@@ -33,9 +37,12 @@ interface ProductsState {
     lowStock: number;
   };
   searchTerm: string;
-  // New state for deletion
+  // Deletion state
   deletingProducts: string[]; // Array of product IDs being deleted
   deleteError: string | null;
+  // Status update state
+  updatingStatus: string[]; // Array of product IDs being updated
+  statusUpdateError: string | null;
 }
 
 const initialState: ProductsState = {
@@ -54,9 +61,12 @@ const initialState: ProductsState = {
     lowStock: 0,
   },
   searchTerm: "",
-  // Initialize new deletion state
+  // Initialize deletion state
   deletingProducts: [],
   deleteError: null,
+  // Initialize status update state
+  updatingStatus: [],
+  statusUpdateError: null,
 };
 
 // Enhanced fetchProducts with filters
@@ -266,7 +276,99 @@ export const fetchProductDetails = createAsyncThunk(
   }
 );
 
-// NEW: Delete Product Thunk
+// NEW: Product Status Update Thunk
+export const updateProductStatus = createAsyncThunk(
+  "products/updateProductStatus",
+  async (
+    {
+      userId,
+      productId,
+      isActive,
+    }: {
+      userId: string;
+      productId: string;
+      isActive: boolean;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      console.log("updateProductStatus thunk called with:", {
+        userId,
+        productId,
+        isActive,
+      });
+
+      const response = await toggleProductStatusApi(
+        userId,
+        productId,
+        isActive
+      );
+
+      if (!response.result) {
+        throw new Error(response.message || "Failed to update product status");
+      }
+
+      return {
+        productId,
+        newStatus: isActive ? "A" : "D",
+        message: response.message,
+      };
+    } catch (error: any) {
+      console.error("updateProductStatus thunk error:", error);
+      return rejectWithValue(
+        error.message || "Failed to update product status"
+      );
+    }
+  }
+);
+
+// NEW: Bulk Status Update Thunk
+export const updateMultipleProductsStatus = createAsyncThunk(
+  "products/updateMultipleProductsStatus",
+  async (
+    {
+      userId,
+      productIds,
+      status,
+    }: {
+      userId: string;
+      productIds: string[];
+      status: "A" | "D" | "H" | "X";
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      console.log("updateMultipleProductsStatus thunk called with:", {
+        userId,
+        productIds,
+        status,
+      });
+
+      const response = await updateMultipleProductsStatusApi(
+        userId,
+        productIds,
+        status
+      );
+
+      if (!response.result) {
+        throw new Error(response.message || "Failed to update products status");
+      }
+
+      return {
+        productIds,
+        newStatus: status,
+        message: response.message,
+      };
+    } catch (error: any) {
+      console.error("updateMultipleProductsStatus thunk error:", error);
+      return rejectWithValue(
+        error.message || "Failed to update products status"
+      );
+    }
+  }
+);
+
+// Delete Product Thunk
 export const deleteProduct = createAsyncThunk(
   "products/deleteProduct",
   async (
@@ -301,7 +403,7 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
-// NEW: Delete Multiple Products Thunk
+// Delete Multiple Products Thunk
 export const deleteMultipleProducts = createAsyncThunk(
   "products/deleteMultipleProducts",
   async (
@@ -365,7 +467,8 @@ const productsSlice = createSlice({
       console.log("resetProductsState called");
       return initialState;
     },
-    updateProductStatus: (state, action) => {
+    // Local status update for optimistic UI
+    updateProductStatusLocal: (state, action) => {
       const { productId, status } = action.payload;
       const productIndex = state.products.findIndex(
         (p) => p.product_id === productId
@@ -374,19 +477,23 @@ const productsSlice = createSlice({
         state.products[productIndex].status = status;
       }
     },
-    // NEW: Clear delete error
+    // Clear errors
     clearDeleteError: (state) => {
       console.log("clearDeleteError called");
       state.deleteError = null;
     },
-    // NEW: Remove product from local state (optimistic update)
+    clearStatusUpdateError: (state) => {
+      console.log("clearStatusUpdateError called");
+      state.statusUpdateError = null;
+    },
+    // Remove product from local state (optimistic update)
     removeProductFromState: (state, action) => {
       const productId = action.payload;
       console.log("removeProductFromState called with:", productId);
       state.products = state.products.filter((p) => p.product_id !== productId);
       state.totalItems = Math.max(0, state.totalItems - 1);
     },
-    // NEW: Remove multiple products from local state
+    // Remove multiple products from local state
     removeMultipleProductsFromState: (state, action) => {
       const productIds = action.payload;
       console.log("removeMultipleProductsFromState called with:", productIds);
@@ -510,7 +617,105 @@ const productsSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // NEW: Delete Product Cases
+      // Update Product Status Cases
+      .addCase(updateProductStatus.pending, (state, action) => {
+        console.log("updateProductStatus.pending");
+        const { productId } = action.meta.arg;
+
+        // Add product to updating list
+        if (!state.updatingStatus.includes(productId)) {
+          state.updatingStatus.push(productId);
+        }
+        state.statusUpdateError = null;
+      })
+      .addCase(updateProductStatus.fulfilled, (state, action) => {
+        console.log("updateProductStatus.fulfilled with:", action.payload);
+
+        const { productId, newStatus } = action.payload;
+
+        // Update product status in local state
+        const productIndex = state.products.findIndex(
+          (p) => p.product_id === productId
+        );
+        if (productIndex !== -1) {
+          state.products[productIndex].status = newStatus;
+        }
+
+        // Remove from updating list
+        state.updatingStatus = state.updatingStatus.filter(
+          (id) => id !== productId
+        );
+
+        state.statusUpdateError = null;
+      })
+      .addCase(updateProductStatus.rejected, (state, action) => {
+        console.log("updateProductStatus.rejected with:", action.payload);
+
+        const { productId } = action.meta.arg;
+
+        // Remove from updating list
+        state.updatingStatus = state.updatingStatus.filter(
+          (id) => id !== productId
+        );
+
+        state.statusUpdateError = action.payload as string;
+      })
+
+      // Update Multiple Products Status Cases
+      .addCase(updateMultipleProductsStatus.pending, (state, action) => {
+        console.log("updateMultipleProductsStatus.pending");
+        const { productIds } = action.meta.arg;
+
+        // Add products to updating list
+        productIds.forEach((id) => {
+          if (!state.updatingStatus.includes(id)) {
+            state.updatingStatus.push(id);
+          }
+        });
+        state.statusUpdateError = null;
+      })
+      .addCase(updateMultipleProductsStatus.fulfilled, (state, action) => {
+        console.log(
+          "updateMultipleProductsStatus.fulfilled with:",
+          action.payload
+        );
+
+        const { productIds, newStatus } = action.payload;
+
+        // Update products status in local state
+        productIds.forEach((productId) => {
+          const productIndex = state.products.findIndex(
+            (p) => p.product_id === productId
+          );
+          if (productIndex !== -1) {
+            state.products[productIndex].status = newStatus;
+          }
+        });
+
+        // Remove from updating list
+        state.updatingStatus = state.updatingStatus.filter(
+          (id) => !productIds.includes(id)
+        );
+
+        state.statusUpdateError = null;
+      })
+      .addCase(updateMultipleProductsStatus.rejected, (state, action) => {
+        console.log(
+          "updateMultipleProductsStatus.rejected with:",
+          action.payload
+        );
+
+        const { productIds } = action.meta.arg;
+
+        // Remove from updating list
+        state.updatingStatus = state.updatingStatus.filter(
+          (id) => !productIds.includes(id)
+        );
+
+        state.statusUpdateError = action.payload as string;
+      })
+
+      // Delete Product Cases
       .addCase(deleteProduct.pending, (state, action) => {
         console.log("deleteProduct.pending");
         const productIds = Array.isArray(action.meta.arg.productIds)
@@ -559,7 +764,7 @@ const productsSlice = createSlice({
         state.deleteError = action.payload as string;
       })
 
-      // NEW: Delete Multiple Products Cases
+      // Delete Multiple Products Cases
       .addCase(deleteMultipleProducts.pending, (state, action) => {
         console.log("deleteMultipleProducts.pending");
         const { productIds } = action.meta.arg;
@@ -610,8 +815,9 @@ export const {
   setSearchTerm,
   clearProducts,
   resetProductsState,
-  updateProductStatus,
+  updateProductStatusLocal,
   clearDeleteError,
+  clearStatusUpdateError,
   removeProductFromState,
   removeMultipleProductsFromState,
 } = productsSlice.actions;
