@@ -592,6 +592,81 @@ export const toggleProductStatusApi = async (
   return await updateProductStatusApi(userId, productId, status);
 };
 
+export interface CategoryData {
+  id: string;
+  name: string;
+  subcategories?: CategoryData[];
+}
+
+export interface CategoriesResponse {
+  categories: CategoryData[];
+  result: boolean;
+  message: string;
+}
+
+// Add this function to your apiService.ts
+export const fetchCategoriesApi = async (
+  userId: string,
+  productId?: string
+): Promise<CategoriesResponse> => {
+  try {
+    const params: any = {
+      _d: "NtSeCategoriesApi",
+      user_id: userId,
+      for_product_data: true,
+    };
+
+    if (productId) {
+      params.product_id = productId;
+    }
+
+    console.log("Fetching categories with params:", params);
+
+    const response = await apiClient.get(`/api.php`, { params });
+
+    console.log("Categories API response:", response.data);
+
+    // Transform the API response to match your expected format
+    const transformedCategories = transformCategoriesData(response.data);
+
+    return {
+      categories: transformedCategories,
+      result: response.data.result || true,
+      message: response.data.message || "Categories fetched successfully",
+    };
+  } catch (error) {
+    console.error("Fetch Categories API error:", error);
+    throw error;
+  }
+};
+
+// Helper function to transform API response to your expected format
+const transformCategoriesData = (apiResponse: any): CategoryData[] => {
+  // Your API response has the exact structure we need
+  if (apiResponse.categories && Array.isArray(apiResponse.categories)) {
+    return apiResponse.categories.map((category: any) =>
+      transformCategoryRecursive(category)
+    );
+  }
+
+  // Fallback if structure is different
+  return [];
+};
+
+// Recursive function to handle nested subcategories
+const transformCategoryRecursive = (category: any): CategoryData => {
+  return {
+    id: category.id,
+    name: category.name,
+    subcategories:
+      category.subcategories && Array.isArray(category.subcategories)
+        ? category.subcategories.map((sub: any) =>
+            transformCategoryRecursive(sub)
+          )
+        : undefined,
+  };
+};
+
 // NEW: Delete Product API Function
 export const deleteProductApi = async (
   userId: string,

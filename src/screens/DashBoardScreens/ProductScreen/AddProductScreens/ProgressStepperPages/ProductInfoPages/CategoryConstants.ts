@@ -1,6 +1,4 @@
-import React from 'react';
-import {View} from 'react-native';
-import {ColorPalette} from '../../../../../../config/colorPalette';
+import React from "react";
 
 export interface SubCategory {
   id: string;
@@ -14,74 +12,77 @@ export interface Category {
   subcategories?: SubCategory[];
 }
 
-export const CATEGORIES: Category[] = [
+// Keep fallback categories for when API is loading or fails
+export const FALLBACK_CATEGORIES: Category[] = [
   {
-    id: 'men',
-    name: 'Men',
+    id: "men",
+    name: "Men",
     subcategories: [
-      {id: 'men-top', name: 'Top wear'},
-      {id: 'men-bottom', name: 'Bottom wear'},
-      {id: 'men-inner', name: 'Inner wear & Sleep wear'},
-      {id: 'men-sports', name: 'Sports & Activity wear'},
-      {id: 'men-foot', name: 'Foot wear'},
-      {id: 'men-accessories', name: "Men's accessories"},
-      {id: 'men-personal', name: 'Personal care & Grooming'},
+      { id: "men-top", name: "Top wear" },
+      { id: "men-bottom", name: "Bottom wear" },
+      { id: "men-inner", name: "Inner wear & Sleep wear" },
+      { id: "men-sports", name: "Sports & Activity wear" },
+      { id: "men-foot", name: "Foot wear" },
+      { id: "men-accessories", name: "Men's accessories" },
+      { id: "men-personal", name: "Personal care & Grooming" },
     ],
   },
   {
-    id: 'women',
-    name: 'Women',
+    id: "women",
+    name: "Women",
     subcategories: [
-      {id: 'women-top', name: 'Top wear'},
-      {id: 'women-bottom', name: 'Bottom wear'},
-      {id: 'women-inner', name: 'Inner wear & Sleep wear'},
-      {id: 'women-sports', name: 'Sports & Activity wear'},
+      { id: "women-top", name: "Top wear" },
+      { id: "women-bottom", name: "Bottom wear" },
+      { id: "women-inner", name: "Inner wear & Sleep wear" },
+      { id: "women-sports", name: "Sports & Activity wear" },
     ],
   },
   {
-    id: 'kids',
-    name: 'Kids',
+    id: "kids",
+    name: "Kids",
   },
   {
-    id: 'beauty',
-    name: 'Beauty Care',
+    id: "beauty",
+    name: "Beauty Care",
   },
   {
-    id: 'jewelry',
-    name: 'Jewellery',
+    id: "jewelry",
+    name: "Jewellery",
   },
   {
-    id: 'accessories',
-    name: 'Accessories',
+    id: "accessories",
+    name: "Accessories",
   },
   {
-    id: 'home',
-    name: 'Home & Kitchen',
+    id: "home",
+    name: "Home & Kitchen",
   },
   {
-    id: 'footwear',
-    name: 'Footwear & Bags',
+    id: "footwear",
+    name: "Footwear & Bags",
   },
   {
-    id: 'living',
-    name: 'Home & Living',
+    id: "living",
+    name: "Home & Living",
   },
   {
-    id: 'health',
-    name: 'Health & Wellness',
+    id: "health",
+    name: "Health & Wellness",
   },
 ];
 
 // Search-related constants
 export const PLACEHOLDER_TEXT = {
-  CATEGORY_SEARCH: 'Search category',
-  SUBCATEGORY_SEARCH: 'Search subcategory',
+  CATEGORY_SEARCH: "Search category",
+  SUBCATEGORY_SEARCH: "Search subcategory",
 };
 
 // UI strings
 export const UI_TEXT = {
-  SELECT_CATEGORY: 'Select category',
-  SELECT_SUBCATEGORY: 'Select subcategory',
-  NO_CATEGORIES: 'No categories found',
-  NO_SUBCATEGORIES: 'No subcategories found',
+  SELECT_CATEGORY: "Select category",
+  SELECT_SUBCATEGORY: "Select subcategory",
+  NO_CATEGORIES: "No categories found",
+  NO_SUBCATEGORIES: "No subcategories found",
+  LOADING_CATEGORIES: "Loading categories...",
+  ERROR_LOADING_CATEGORIES: "Failed to load categories",
 };
